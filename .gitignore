@@ -1,0 +1,51 @@
+# .NET
+**/bin/
+**/obj/
+**/out/
+**/artifacts/
+**/publish/
+**/TestResults/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Fișiere temporare .NET
+*.tmp_proj
+*.csproj.user
+*.dbmdl
+*.pdb
+*.mdb
+*.opendb
+*.sdf
+*.cache
+
+# Angular / Node.js
+**/node_modules/
+**/dist/
+**/coverage/
+**/.angular/
+**/.nyc_output/
+
+# Configurații locale și secrete
+.env
+.env.*
+!.env.example
+!.env.template
+**/secrets.json
+**/secrets.*.json
+
+# Loguri
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Editor și sistem de operare
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini

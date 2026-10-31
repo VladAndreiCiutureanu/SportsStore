@@ -28,7 +28,8 @@ namespace SportsStore.API.Controllers
                 .Select(method => new DeliveryMethodResponse
                 {
                     Id = method.Id,
-                    Name = method.Name
+                    Name = method.Name,
+                    Cost = method.Cost
                 })
                 .ToListAsync();
 
@@ -45,7 +46,8 @@ namespace SportsStore.API.Controllers
                 .Select(method => new DeliveryMethodResponse
                 {
                     Id = method.Id,
-                    Name = method.Name
+                    Name = method.Name,
+                    Cost = method.Cost
                 })
                 .FirstOrDefaultAsync();
 
@@ -69,14 +71,19 @@ namespace SportsStore.API.Controllers
                 return Conflict(new { message = $"Delivery method with name '{name}' already exists." });
             }
 
-            var deliveryMethod = new DeliveryMethod { Name = name };
+            var deliveryMethod = new DeliveryMethod
+            {
+                Name = name,
+                Cost = request.Cost
+            };
             _context.DeliveryMethods.Add(deliveryMethod);
             await _context.SaveChangesAsync();
 
             var response = new DeliveryMethodResponse
             {
                 Id = deliveryMethod.Id,
-                Name = deliveryMethod.Name
+                Name = deliveryMethod.Name,
+                Cost = deliveryMethod.Cost
             };
 
             return CreatedAtAction(nameof(GetDeliveryMethod), new { id = deliveryMethod.Id }, response);
@@ -102,6 +109,7 @@ namespace SportsStore.API.Controllers
             }
 
             deliveryMethod.Name = name;
+            deliveryMethod.Cost = request.Cost;
             await _context.SaveChangesAsync();
 
             return NoContent();

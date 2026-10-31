@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SportsStore.API.Database;
@@ -142,8 +142,41 @@ namespace SportsStore.API.Controllers
 
         [HttpGet]
         [AllowAnonymous]
-        public async Task<ActionResult<IEnumerable<ProductResponse>>> GetProducts([FromQuery] int? categoryId, [FromQuery] string? search)
+        public async Task<ActionResult<IEnumerable<ProductResponse>>> GetProducts(
+            [FromQuery] int? categoryId, 
+            [FromQuery] string? search,
+            [FromQuery] decimal? minPrice,
+            [FromQuery] decimal? maxPrice,
+            [FromQuery] bool? inStock,
+            [FromQuery] int? minStock,
+            [FromQuery] int? maxStock,
+            [FromQuery] string? supplier,
+            [FromQuery] List<int>? deliveryMethodIds)
         {
+            if(minPrice.HasValue && minPrice.Value < 0)
+            {
+                return BadRequest("Minimum price cannot be negative.");
+            }
+            if(maxPrice.HasValue && maxPrice.Value < 0)
+            {
+                return BadRequest("Maximum price cannot be negative.");
+            }
+            if(minPrice.HasValue && maxPrice.HasValue && minPrice.Value > maxPrice.Value)
+            {
+                return BadRequest("Minimum price cannot be greater than maximum price.");
+            }
+            if(minStock.HasValue && minStock.Value < 0)
+            {
+                return BadRequest("Minimum stock cannot be negative.");
+            }
+            if(maxStock.HasValue && maxStock.Value < 0)
+            {
+                return BadRequest("Maximum stock cannot be negative.");
+            }
+            if(minStock.HasValue && maxStock.HasValue && minStock.Value > maxStock.Value)
+            {
+                return BadRequest("Minimum stock cannot be greater than maximum stock.");
+            }
             var query = _context.Products
                 .AsNoTracking()
                 .Include(product => product.Category)
@@ -159,11 +192,51 @@ namespace SportsStore.API.Controllers
             {
                 var term = search.Trim().ToLower();
                 query = query.Where(product =>
-                        product.Name.Contains(term) ||
+                        product.Name.ToLower().Contains(term) ||
                         (product.Description != null &&
-                        product.Description.Contains(term)) ||
+                        product.Description.ToLower().Contains(term)) ||
                         (product.Specifications != null &&
-                        product.Specifications.Contains(term)));
+                        product.Specifications.ToLower().Contains(term)));
+            }
+
+            if(minPrice.HasValue)
+            {
+                query = query.Where(product => product.Price >= minPrice.Value);
+            }
+
+            if(maxPrice.HasValue)
+            {
+                query = query.Where(product => product.Price <= maxPrice.Value);
+            }
+
+            if(inStock == true)
+            {
+                query = query.Where(product => product.Stock > 0);
+            }
+            else if (inStock == false)
+            {
+                query = query.Where(product => product.Stock == 0);
+            }
+
+            if(minStock.HasValue)
+            {
+                query = query.Where(product => product.Stock >= minStock.Value);
+            }
+
+            if(maxStock.HasValue)
+            {
+                query = query.Where(product => product.Stock <= maxStock.Value);
+            }
+
+            if(!string.IsNullOrWhiteSpace(supplier))
+            {
+                var supplierTerm = supplier.Trim().ToLower();
+                query = query.Where(product => product.Supplier.ToLower().Contains(supplierTerm));
+            }
+
+            if(deliveryMethodIds is { Count: > 0 })
+            {
+                query = query.Where(product => product.DeliveryMethods.Any(method => deliveryMethodIds.Contains(method.Id)));
             }
 
             var products = await query.OrderBy(product => product.Name).ToListAsync();
@@ -190,7 +263,8 @@ namespace SportsStore.API.Controllers
                     .Select(method => new DeliveryMethodResponse
                     {
                         Id = method.Id,
-                        Name = method.Name
+                        Name = method.Name,
+                        Cost = method.Cost
                     })
                     .ToList()
             };

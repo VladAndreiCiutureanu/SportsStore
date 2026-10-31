@@ -1,0 +1,2406 @@
+﻿TESTARE FULLA API BACKEND - TRANSCRIPT DINTR-O RULARE LOCALA
+Data testului: 2026-10-31 10:02:35 +02:00
+Base URL: http://localhost:5001
+Prefix temporar: FULLB8217DD6
+ID-urile, tokenurile si URL-urile sunt cele reale primite in timpul acestei rulari. Credentialele sunt mascate.
+
+================================================================
+Autentificare: register utilizator
+================================================================
+REQUEST: POST http://localhost:5001/api/Auth/register
+Request body:
+{
+  "password": "<redacted test password>",
+  "username": "FULLB8217DD6user",
+  "email": "fullb8217dd6@example.test"
+}
+RESPONSE: 201
+{
+  "id": "0727d101-d6bc-4d97-b297-521fde2247f2",
+  "username": "FULLB8217DD6user",
+  "email": "fullb8217dd6@example.test"
+}
+
+================================================================
+Autentificare: register cont pentru Admin de test
+================================================================
+REQUEST: POST http://localhost:5001/api/Auth/register
+Request body:
+{
+  "password": "<redacted test password>",
+  "username": "FULLB8217DD6admin",
+  "email": "fullb8217dd6admin@example.test"
+}
+RESPONSE: 201
+{
+  "id": "a44dfd40-cb6a-4676-aac8-662fe6ee5205",
+  "username": "FULLB8217DD6admin",
+  "email": "fullb8217dd6admin@example.test"
+}
+
+================================================================
+Autentificare: register al doilea utilizator
+================================================================
+REQUEST: POST http://localhost:5001/api/Auth/register
+Request body:
+{
+  "password": "<redacted test password>",
+  "username": "FULLB8217DD6second",
+  "email": "fullb8217dd6second@example.test"
+}
+RESPONSE: 201
+{
+  "id": "030e637f-fccf-4e0d-82c4-86abd665a18b",
+  "username": "FULLB8217DD6second",
+  "email": "fullb8217dd6second@example.test"
+}
+
+ADMIN ROLE SETUP: rolul Admin a fost atasat local contului temporar FULLB8217DD6admin direct in baza de test; aplicatia nu are endpoint de promovare.
+
+================================================================
+Autentificare: login User cu username
+================================================================
+REQUEST: POST http://localhost:5001/api/Auth/login
+Request body:
+{
+  "usernameOrEmail": "FULLB8217DD6user",
+  "password": "<redacted test password>"
+}
+RESPONSE: 200
+{
+  "token": "<redacted JWT>",
+  "expiresAt": "2026-10-31T09:02:35.9727753Z",
+  "userId": "0727d101-d6bc-4d97-b297-521fde2247f2",
+  "username": "FULLB8217DD6user",
+  "email": "fullb8217dd6@example.test"
+}
+
+================================================================
+Autentificare: login User cu email
+================================================================
+REQUEST: POST http://localhost:5001/api/Auth/login
+Request body:
+{
+  "usernameOrEmail": "fullb8217dd6@example.test",
+  "password": "<redacted test password>"
+}
+RESPONSE: 200
+{
+  "token": "<redacted JWT>",
+  "expiresAt": "2026-10-31T09:02:36.0349621Z",
+  "userId": "0727d101-d6bc-4d97-b297-521fde2247f2",
+  "username": "FULLB8217DD6user",
+  "email": "fullb8217dd6@example.test"
+}
+
+================================================================
+Autentificare: login al doilea User
+================================================================
+REQUEST: POST http://localhost:5001/api/Auth/login
+Request body:
+{
+  "usernameOrEmail": "FULLB8217DD6second",
+  "password": "<redacted test password>"
+}
+RESPONSE: 200
+{
+  "token": "<redacted JWT>",
+  "expiresAt": "2026-10-31T09:02:36.1043126Z",
+  "userId": "030e637f-fccf-4e0d-82c4-86abd665a18b",
+  "username": "FULLB8217DD6second",
+  "email": "fullb8217dd6second@example.test"
+}
+
+================================================================
+Autentificare: parola incorecta
+================================================================
+REQUEST: POST http://localhost:5001/api/Auth/login
+Request body:
+{
+  "usernameOrEmail": "FULLB8217DD6user",
+  "password": "<redacted test password>"
+}
+RESPONSE: 401
+{
+  "error": "Invalid username/email or password."
+}
+
+================================================================
+Autentificare: login Admin dupa acordarea rolului
+================================================================
+REQUEST: POST http://localhost:5001/api/Auth/login
+Request body:
+{
+  "usernameOrEmail": "FULLB8217DD6admin",
+  "password": "<redacted test password>"
+}
+RESPONSE: 200
+{
+  "token": "<redacted JWT>",
+  "expiresAt": "2026-10-31T09:02:36.2843192Z",
+  "userId": "a44dfd40-cb6a-4676-aac8-662fe6ee5205",
+  "username": "FULLB8217DD6admin",
+  "email": "fullb8217dd6admin@example.test"
+}
+
+================================================================
+Catalog: listare produse publica
+================================================================
+REQUEST: GET http://localhost:5001/api/Product
+RESPONSE: 200
+[]
+
+================================================================
+Catalog: listare categorii publica
+================================================================
+REQUEST: GET http://localhost:5001/api/Category
+RESPONSE: 200
+[
+  {
+    "id": 13,
+    "name": "Test Category",
+    "description": "Test Description"
+  },
+  {
+    "id": 3,
+    "name": "TestUser",
+    "description": "TestPass123*"
+  }
+]
+
+================================================================
+Catalog: listare metode livrare publica
+================================================================
+REQUEST: GET http://localhost:5001/api/DeliveryMethod
+RESPONSE: 200
+[]
+
+================================================================
+Autorizare: cos fara token
+================================================================
+REQUEST: GET http://localhost:5001/api/Cart
+RESPONSE: 401
+(fara body)
+
+================================================================
+Autorizare: creare categorie cu rol User
+================================================================
+REQUEST: POST http://localhost:5001/api/Category
+Authorization: Bearer <clientToken>
+Request body:
+{
+  "description": "trebuie respins",
+  "name": "FULLB8217DD6 forbidden"
+}
+RESPONSE: 403
+(fara body)
+
+================================================================
+Categorii: creare
+================================================================
+REQUEST: POST http://localhost:5001/api/Category
+Authorization: Bearer <adminToken>
+Request body:
+{
+  "description": "categorie temporara pentru test",
+  "name": "FULLB8217DD6 sport"
+}
+RESPONSE: 201
+{
+  "id": 18,
+  "name": "FULLB8217DD6 sport",
+  "description": "categorie temporara pentru test"
+}
+
+================================================================
+Categorii: citire dupa ID
+================================================================
+REQUEST: GET http://localhost:5001/api/Category/18
+RESPONSE: 200
+{
+  "id": 18,
+  "name": "FULLB8217DD6 sport",
+  "description": "categorie temporara pentru test"
+}
+
+================================================================
+Categorii: listare dupa creare
+================================================================
+REQUEST: GET http://localhost:5001/api/Category
+RESPONSE: 200
+[
+  {
+    "id": 18,
+    "name": "FULLB8217DD6 sport",
+    "description": "categorie temporara pentru test"
+  },
+  {
+    "id": 13,
+    "name": "Test Category",
+    "description": "Test Description"
+  },
+  {
+    "id": 3,
+    "name": "TestUser",
+    "description": "TestPass123*"
+  }
+]
+
+================================================================
+Categorii: editare
+================================================================
+REQUEST: PUT http://localhost:5001/api/Category/18
+Authorization: Bearer <adminToken>
+Request body:
+{
+  "description": "descriere editata",
+  "name": "FULLB8217DD6 sport editat"
+}
+RESPONSE: 204
+(fara body)
+
+================================================================
+Categorii: duplicate name
+================================================================
+REQUEST: POST http://localhost:5001/api/Category
+Authorization: Bearer <adminToken>
+Request body:
+{
+  "description": "duplicat",
+  "name": "FULLB8217DD6 sport editat"
+}
+RESPONSE: 409
+{
+  "message": "Category with name 'FULLB8217DD6 sport editat' already exists."
+}
+
+================================================================
+Categorii: creare categorie nefolosita pentru test delete
+================================================================
+REQUEST: POST http://localhost:5001/api/Category
+Authorization: Bearer <adminToken>
+Request body:
+{
+  "description": "categorie temporara fara produse",
+  "name": "FULLB8217DD6 delete category"
+}
+RESPONSE: 201
+{
+  "id": 19,
+  "name": "FULLB8217DD6 delete category",
+  "description": "categorie temporara fara produse"
+}
+
+================================================================
+Categorii: stergere categorie fara produse
+================================================================
+REQUEST: DELETE http://localhost:5001/api/Category/19
+Authorization: Bearer <adminToken>
+RESPONSE: 204
+(fara body)
+
+================================================================
+Livrare: creare curier standard
+================================================================
+REQUEST: POST http://localhost:5001/api/DeliveryMethod
+Authorization: Bearer <adminToken>
+Request body:
+{
+  "cost": 8.5,
+  "name": "FULLB8217DD6 courier"
+}
+RESPONSE: 201
+{
+  "id": 23,
+  "name": "FULLB8217DD6 courier",
+  "cost": 8.5
+}
+
+================================================================
+Livrare: creare ridicare
+================================================================
+REQUEST: POST http://localhost:5001/api/DeliveryMethod
+Authorization: Bearer <adminToken>
+Request body:
+{
+  "cost": 0,
+  "name": "FULLB8217DD6 pickup"
+}
+RESPONSE: 201
+{
+  "id": 24,
+  "name": "FULLB8217DD6 pickup",
+  "cost": 0
+}
+
+================================================================
+Livrare: detalii metoda
+================================================================
+REQUEST: GET http://localhost:5001/api/DeliveryMethod/23
+RESPONSE: 200
+{
+  "id": 23,
+  "name": "FULLB8217DD6 courier",
+  "cost": 8.5
+}
+
+================================================================
+Livrare: listare metode
+================================================================
+REQUEST: GET http://localhost:5001/api/DeliveryMethod
+RESPONSE: 200
+[
+  {
+    "id": 23,
+    "name": "FULLB8217DD6 courier",
+    "cost": 8.5
+  },
+  {
+    "id": 24,
+    "name": "FULLB8217DD6 pickup",
+    "cost": 0.0
+  }
+]
+
+================================================================
+Livrare: editare tarif fix
+================================================================
+REQUEST: PUT http://localhost:5001/api/DeliveryMethod/23
+Authorization: Bearer <adminToken>
+Request body:
+{
+  "cost": 8.5,
+  "name": "FULLB8217DD6 courier"
+}
+RESPONSE: 204
+(fara body)
+
+================================================================
+Livrare: creare metoda temporara pentru test delete
+================================================================
+REQUEST: POST http://localhost:5001/api/DeliveryMethod
+Authorization: Bearer <adminToken>
+Request body:
+{
+  "cost": 2,
+  "name": "FULLB8217DD6 delete method"
+}
+RESPONSE: 201
+{
+  "id": 25,
+  "name": "FULLB8217DD6 delete method",
+  "cost": 2
+}
+
+================================================================
+Livrare: stergere metoda nefolosita
+================================================================
+REQUEST: DELETE http://localhost:5001/api/DeliveryMethod/25
+Authorization: Bearer <adminToken>
+RESPONSE: 204
+(fara body)
+
+================================================================
+Produse: create blocat pentru User
+================================================================
+REQUEST: POST http://localhost:5001/api/Product
+Authorization: Bearer <clientToken>
+Request body:
+{
+  "name": "FULLB8217DD6 Sprint Alpha",
+  "stock": 5,
+  "supplier": "FULLB8217DD6 Northwind",
+  "price": 120,
+  "description": "Pantofi pentru alergare pe sosea",
+  "specifications": "Model Falcon XR carbon",
+  "categoryId": 18,
+  "deliveryMethodIds": [
+    23,
+    24
+  ],
+  "imageUrl": null
+}
+RESPONSE: 403
+(fara body)
+
+================================================================
+Produse: creare Sprint Alpha
+================================================================
+REQUEST: POST http://localhost:5001/api/Product
+Authorization: Bearer <adminToken>
+Request body:
+{
+  "name": "FULLB8217DD6 Sprint Alpha",
+  "stock": 5,
+  "supplier": "FULLB8217DD6 Northwind",
+  "price": 120,
+  "description": "Pantofi pentru alergare pe sosea",
+  "specifications": "Model Falcon XR carbon",
+  "categoryId": 18,
+  "deliveryMethodIds": [
+    23,
+    24
+  ],
+  "imageUrl": null
+}
+RESPONSE: 201
+{
+  "id": 25,
+  "name": "FULLB8217DD6 Sprint Alpha",
+  "description": "Pantofi pentru alergare pe sosea",
+  "specifications": "Model Falcon XR carbon",
+  "price": 120.0,
+  "stock": 5,
+  "supplier": "FULLB8217DD6 Northwind",
+  "imageUrl": null,
+  "categoryId": 18,
+  "categoryName": "FULLB8217DD6 sport editat",
+  "deliveryMethods": [
+    {
+      "id": 23,
+      "name": "FULLB8217DD6 courier",
+      "cost": 8.5
+    },
+    {
+      "id": 24,
+      "name": "FULLB8217DD6 pickup",
+      "cost": 0.0
+    }
+  ]
+}
+
+================================================================
+Produse: creare Trail Beta
+================================================================
+REQUEST: POST http://localhost:5001/api/Product
+Authorization: Bearer <adminToken>
+Request body:
+{
+  "name": "FULLB8217DD6 Trail Beta",
+  "stock": 3,
+  "supplier": "FULLB8217DD6 Southpeak",
+  "price": 50,
+  "description": "Pantofi aderenti pentru trasee",
+  "specifications": "Model Ridge GTX",
+  "categoryId": 18,
+  "deliveryMethodIds": [
+    23
+  ],
+  "imageUrl": null
+}
+RESPONSE: 201
+{
+  "id": 26,
+  "name": "FULLB8217DD6 Trail Beta",
+  "description": "Pantofi aderenti pentru trasee",
+  "specifications": "Model Ridge GTX",
+  "price": 50.0,
+  "stock": 3,
+  "supplier": "FULLB8217DD6 Southpeak",
+  "imageUrl": null,
+  "categoryId": 18,
+  "categoryName": "FULLB8217DD6 sport editat",
+  "deliveryMethods": [
+    {
+      "id": 23,
+      "name": "FULLB8217DD6 courier",
+      "cost": 8.5
+    }
+  ]
+}
+
+================================================================
+Produse: creare produs fara stoc
+================================================================
+REQUEST: POST http://localhost:5001/api/Product
+Authorization: Bearer <adminToken>
+Request body:
+{
+  "name": "FULLB8217DD6 Basic Gamma",
+  "stock": 0,
+  "supplier": "FULLB8217DD6 Northwind",
+  "price": 80,
+  "description": "Pantofi de antrenament",
+  "specifications": "Model Urban Lite",
+  "categoryId": 18,
+  "deliveryMethodIds": [
+    23,
+    24
+  ],
+  "imageUrl": null
+}
+RESPONSE: 201
+{
+  "id": 27,
+  "name": "FULLB8217DD6 Basic Gamma",
+  "description": "Pantofi de antrenament",
+  "specifications": "Model Urban Lite",
+  "price": 80.0,
+  "stock": 0,
+  "supplier": "FULLB8217DD6 Northwind",
+  "imageUrl": null,
+  "categoryId": 18,
+  "categoryName": "FULLB8217DD6 sport editat",
+  "deliveryMethods": [
+    {
+      "id": 23,
+      "name": "FULLB8217DD6 courier",
+      "cost": 8.5
+    },
+    {
+      "id": 24,
+      "name": "FULLB8217DD6 pickup",
+      "cost": 0.0
+    }
+  ]
+}
+
+================================================================
+Produse: detalii complete
+================================================================
+REQUEST: GET http://localhost:5001/api/Product/25
+RESPONSE: 200
+{
+  "id": 25,
+  "name": "FULLB8217DD6 Sprint Alpha",
+  "description": "Pantofi pentru alergare pe sosea",
+  "specifications": "Model Falcon XR carbon",
+  "price": 120.0,
+  "stock": 5,
+  "supplier": "FULLB8217DD6 Northwind",
+  "imageUrl": null,
+  "categoryId": 18,
+  "categoryName": "FULLB8217DD6 sport editat",
+  "deliveryMethods": [
+    {
+      "id": 23,
+      "name": "FULLB8217DD6 courier",
+      "cost": 8.5
+    },
+    {
+      "id": 24,
+      "name": "FULLB8217DD6 pickup",
+      "cost": 0.0
+    }
+  ]
+}
+
+================================================================
+Produse: rasfoire catalog
+================================================================
+REQUEST: GET http://localhost:5001/api/Product
+RESPONSE: 200
+[
+  {
+    "id": 27,
+    "name": "FULLB8217DD6 Basic Gamma",
+    "description": "Pantofi de antrenament",
+    "specifications": "Model Urban Lite",
+    "price": 80.0,
+    "stock": 0,
+    "supplier": "FULLB8217DD6 Northwind",
+    "imageUrl": null,
+    "categoryId": 18,
+    "categoryName": "FULLB8217DD6 sport editat",
+    "deliveryMethods": [
+      {
+        "id": 23,
+        "name": "FULLB8217DD6 courier",
+        "cost": 8.5
+      },
+      {
+        "id": 24,
+        "name": "FULLB8217DD6 pickup",
+        "cost": 0.0
+      }
+    ]
+  },
+  {
+    "id": 25,
+    "name": "FULLB8217DD6 Sprint Alpha",
+    "description": "Pantofi pentru alergare pe sosea",
+    "specifications": "Model Falcon XR carbon",
+    "price": 120.0,
+    "stock": 5,
+    "supplier": "FULLB8217DD6 Northwind",
+    "imageUrl": null,
+    "categoryId": 18,
+    "categoryName": "FULLB8217DD6 sport editat",
+    "deliveryMethods": [
+      {
+        "id": 23,
+        "name": "FULLB8217DD6 courier",
+        "cost": 8.5
+      },
+      {
+        "id": 24,
+        "name": "FULLB8217DD6 pickup",
+        "cost": 0.0
+      }
+    ]
+  },
+  {
+    "id": 26,
+    "name": "FULLB8217DD6 Trail Beta",
+    "description": "Pantofi aderenti pentru trasee",
+    "specifications": "Model Ridge GTX",
+    "price": 50.0,
+    "stock": 3,
+    "supplier": "FULLB8217DD6 Southpeak",
+    "imageUrl": null,
+    "categoryId": 18,
+    "categoryName": "FULLB8217DD6 sport editat",
+    "deliveryMethods": [
+      {
+        "id": 23,
+        "name": "FULLB8217DD6 courier",
+        "cost": 8.5
+      }
+    ]
+  }
+]
+
+================================================================
+Produse: rasfoire dupa categorie
+================================================================
+REQUEST: GET http://localhost:5001/api/Product?categoryId=18
+RESPONSE: 200
+[
+  {
+    "id": 27,
+    "name": "FULLB8217DD6 Basic Gamma",
+    "description": "Pantofi de antrenament",
+    "specifications": "Model Urban Lite",
+    "price": 80.0,
+    "stock": 0,
+    "supplier": "FULLB8217DD6 Northwind",
+    "imageUrl": null,
+    "categoryId": 18,
+    "categoryName": "FULLB8217DD6 sport editat",
+    "deliveryMethods": [
+      {
+        "id": 23,
+        "name": "FULLB8217DD6 courier",
+        "cost": 8.5
+      },
+      {
+        "id": 24,
+        "name": "FULLB8217DD6 pickup",
+        "cost": 0.0
+      }
+    ]
+  },
+  {
+    "id": 25,
+    "name": "FULLB8217DD6 Sprint Alpha",
+    "description": "Pantofi pentru alergare pe sosea",
+    "specifications": "Model Falcon XR carbon",
+    "price": 120.0,
+    "stock": 5,
+    "supplier": "FULLB8217DD6 Northwind",
+    "imageUrl": null,
+    "categoryId": 18,
+    "categoryName": "FULLB8217DD6 sport editat",
+    "deliveryMethods": [
+      {
+        "id": 23,
+        "name": "FULLB8217DD6 courier",
+        "cost": 8.5
+      },
+      {
+        "id": 24,
+        "name": "FULLB8217DD6 pickup",
+        "cost": 0.0
+      }
+    ]
+  },
+  {
+    "id": 26,
+    "name": "FULLB8217DD6 Trail Beta",
+    "description": "Pantofi aderenti pentru trasee",
+    "specifications": "Model Ridge GTX",
+    "price": 50.0,
+    "stock": 3,
+    "supplier": "FULLB8217DD6 Southpeak",
+    "imageUrl": null,
+    "categoryId": 18,
+    "categoryName": "FULLB8217DD6 sport editat",
+    "deliveryMethods": [
+      {
+        "id": 23,
+        "name": "FULLB8217DD6 courier",
+        "cost": 8.5
+      }
+    ]
+  }
+]
+
+================================================================
+Produse: editare produs
+================================================================
+REQUEST: PUT http://localhost:5001/api/Product/25
+Authorization: Bearer <adminToken>
+Request body:
+{
+  "name": "FULLB8217DD6 Sprint Alpha",
+  "stock": 5,
+  "supplier": "FULLB8217DD6 Northwind",
+  "price": 120,
+  "description": "Pantofi pentru alergare, descriere editata",
+  "specifications": "Model Falcon XR carbon",
+  "categoryId": 18,
+  "deliveryMethodIds": [
+    23,
+    24
+  ],
+  "imageUrl": null
+}
+RESPONSE: 204
+(fara body)
+
+================================================================
+Cautare produs dupa nume
+================================================================
+REQUEST: GET http://localhost:5001/api/Product?search=FULLB8217DD6%20Sprint
+RESPONSE: 200
+[
+  {
+    "id": 25,
+    "name": "FULLB8217DD6 Sprint Alpha",
+    "description": "Pantofi pentru alergare, descriere editata",
+    "specifications": "Model Falcon XR carbon",
+    "price": 120.0,
+    "stock": 5,
+    "supplier": "FULLB8217DD6 Northwind",
+    "imageUrl": null,
+    "categoryId": 18,
+    "categoryName": "FULLB8217DD6 sport editat",
+    "deliveryMethods": [
+      {
+        "id": 23,
+        "name": "FULLB8217DD6 courier",
+        "cost": 8.5
+      },
+      {
+        "id": 24,
+        "name": "FULLB8217DD6 pickup",
+        "cost": 0.0
+      }
+    ]
+  }
+]
+
+================================================================
+Cautare produs dupa descriere
+================================================================
+REQUEST: GET http://localhost:5001/api/Product?search=aderenti%20pentru%20trasee
+RESPONSE: 200
+[
+  {
+    "id": 26,
+    "name": "FULLB8217DD6 Trail Beta",
+    "description": "Pantofi aderenti pentru trasee",
+    "specifications": "Model Ridge GTX",
+    "price": 50.0,
+    "stock": 3,
+    "supplier": "FULLB8217DD6 Southpeak",
+    "imageUrl": null,
+    "categoryId": 18,
+    "categoryName": "FULLB8217DD6 sport editat",
+    "deliveryMethods": [
+      {
+        "id": 23,
+        "name": "FULLB8217DD6 courier",
+        "cost": 8.5
+      }
+    ]
+  }
+]
+
+================================================================
+Cautare produs dupa specificatii/model
+================================================================
+REQUEST: GET http://localhost:5001/api/Product?search=Falcon%20XR
+RESPONSE: 200
+[
+  {
+    "id": 25,
+    "name": "FULLB8217DD6 Sprint Alpha",
+    "description": "Pantofi pentru alergare, descriere editata",
+    "specifications": "Model Falcon XR carbon",
+    "price": 120.0,
+    "stock": 5,
+    "supplier": "FULLB8217DD6 Northwind",
+    "imageUrl": null,
+    "categoryId": 18,
+    "categoryName": "FULLB8217DD6 sport editat",
+    "deliveryMethods": [
+      {
+        "id": 23,
+        "name": "FULLB8217DD6 courier",
+        "cost": 8.5
+      },
+      {
+        "id": 24,
+        "name": "FULLB8217DD6 pickup",
+        "cost": 0.0
+      }
+    ]
+  }
+]
+
+================================================================
+Filtrare dupa interval pret
+================================================================
+REQUEST: GET http://localhost:5001/api/Product?categoryId=18&minPrice=100&maxPrice=130
+RESPONSE: 200
+[
+  {
+    "id": 25,
+    "name": "FULLB8217DD6 Sprint Alpha",
+    "description": "Pantofi pentru alergare, descriere editata",
+    "specifications": "Model Falcon XR carbon",
+    "price": 120.0,
+    "stock": 5,
+    "supplier": "FULLB8217DD6 Northwind",
+    "imageUrl": null,
+    "categoryId": 18,
+    "categoryName": "FULLB8217DD6 sport editat",
+    "deliveryMethods": [
+      {
+        "id": 23,
+        "name": "FULLB8217DD6 courier",
+        "cost": 8.5
+      },
+      {
+        "id": 24,
+        "name": "FULLB8217DD6 pickup",
+        "cost": 0.0
+      }
+    ]
+  }
+]
+
+================================================================
+Filtrare dupa interval stoc
+================================================================
+REQUEST: GET http://localhost:5001/api/Product?categoryId=18&minStock=1&maxStock=5
+RESPONSE: 200
+[
+  {
+    "id": 25,
+    "name": "FULLB8217DD6 Sprint Alpha",
+    "description": "Pantofi pentru alergare, descriere editata",
+    "specifications": "Model Falcon XR carbon",
+    "price": 120.0,
+    "stock": 5,
+    "supplier": "FULLB8217DD6 Northwind",
+    "imageUrl": null,
+    "categoryId": 18,
+    "categoryName": "FULLB8217DD6 sport editat",
+    "deliveryMethods": [
+      {
+        "id": 23,
+        "name": "FULLB8217DD6 courier",
+        "cost": 8.5
+      },
+      {
+        "id": 24,
+        "name": "FULLB8217DD6 pickup",
+        "cost": 0.0
+      }
+    ]
+  },
+  {
+    "id": 26,
+    "name": "FULLB8217DD6 Trail Beta",
+    "description": "Pantofi aderenti pentru trasee",
+    "specifications": "Model Ridge GTX",
+    "price": 50.0,
+    "stock": 3,
+    "supplier": "FULLB8217DD6 Southpeak",
+    "imageUrl": null,
+    "categoryId": 18,
+    "categoryName": "FULLB8217DD6 sport editat",
+    "deliveryMethods": [
+      {
+        "id": 23,
+        "name": "FULLB8217DD6 courier",
+        "cost": 8.5
+      }
+    ]
+  }
+]
+
+================================================================
+Filtrare disponibilitate stoc
+================================================================
+REQUEST: GET http://localhost:5001/api/Product?categoryId=18&inStock=false
+RESPONSE: 200
+[
+  {
+    "id": 27,
+    "name": "FULLB8217DD6 Basic Gamma",
+    "description": "Pantofi de antrenament",
+    "specifications": "Model Urban Lite",
+    "price": 80.0,
+    "stock": 0,
+    "supplier": "FULLB8217DD6 Northwind",
+    "imageUrl": null,
+    "categoryId": 18,
+    "categoryName": "FULLB8217DD6 sport editat",
+    "deliveryMethods": [
+      {
+        "id": 23,
+        "name": "FULLB8217DD6 courier",
+        "cost": 8.5
+      },
+      {
+        "id": 24,
+        "name": "FULLB8217DD6 pickup",
+        "cost": 0.0
+      }
+    ]
+  }
+]
+
+================================================================
+Filtrare dupa furnizor
+================================================================
+REQUEST: GET http://localhost:5001/api/Product?categoryId=18&supplier=FULLB8217DD6%20Northwind
+RESPONSE: 200
+[
+  {
+    "id": 27,
+    "name": "FULLB8217DD6 Basic Gamma",
+    "description": "Pantofi de antrenament",
+    "specifications": "Model Urban Lite",
+    "price": 80.0,
+    "stock": 0,
+    "supplier": "FULLB8217DD6 Northwind",
+    "imageUrl": null,
+    "categoryId": 18,
+    "categoryName": "FULLB8217DD6 sport editat",
+    "deliveryMethods": [
+      {
+        "id": 23,
+        "name": "FULLB8217DD6 courier",
+        "cost": 8.5
+      },
+      {
+        "id": 24,
+        "name": "FULLB8217DD6 pickup",
+        "cost": 0.0
+      }
+    ]
+  },
+  {
+    "id": 25,
+    "name": "FULLB8217DD6 Sprint Alpha",
+    "description": "Pantofi pentru alergare, descriere editata",
+    "specifications": "Model Falcon XR carbon",
+    "price": 120.0,
+    "stock": 5,
+    "supplier": "FULLB8217DD6 Northwind",
+    "imageUrl": null,
+    "categoryId": 18,
+    "categoryName": "FULLB8217DD6 sport editat",
+    "deliveryMethods": [
+      {
+        "id": 23,
+        "name": "FULLB8217DD6 courier",
+        "cost": 8.5
+      },
+      {
+        "id": 24,
+        "name": "FULLB8217DD6 pickup",
+        "cost": 0.0
+      }
+    ]
+  }
+]
+
+================================================================
+Filtrare metode livrare (OR intre valori)
+================================================================
+REQUEST: GET http://localhost:5001/api/Product?categoryId=18&deliveryMethodIds=23&deliveryMethodIds=24
+RESPONSE: 200
+[
+  {
+    "id": 27,
+    "name": "FULLB8217DD6 Basic Gamma",
+    "description": "Pantofi de antrenament",
+    "specifications": "Model Urban Lite",
+    "price": 80.0,
+    "stock": 0,
+    "supplier": "FULLB8217DD6 Northwind",
+    "imageUrl": null,
+    "categoryId": 18,
+    "categoryName": "FULLB8217DD6 sport editat",
+    "deliveryMethods": [
+      {
+        "id": 23,
+        "name": "FULLB8217DD6 courier",
+        "cost": 8.5
+      },
+      {
+        "id": 24,
+        "name": "FULLB8217DD6 pickup",
+        "cost": 0.0
+      }
+    ]
+  },
+  {
+    "id": 25,
+    "name": "FULLB8217DD6 Sprint Alpha",
+    "description": "Pantofi pentru alergare, descriere editata",
+    "specifications": "Model Falcon XR carbon",
+    "price": 120.0,
+    "stock": 5,
+    "supplier": "FULLB8217DD6 Northwind",
+    "imageUrl": null,
+    "categoryId": 18,
+    "categoryName": "FULLB8217DD6 sport editat",
+    "deliveryMethods": [
+      {
+        "id": 23,
+        "name": "FULLB8217DD6 courier",
+        "cost": 8.5
+      },
+      {
+        "id": 24,
+        "name": "FULLB8217DD6 pickup",
+        "cost": 0.0
+      }
+    ]
+  },
+  {
+    "id": 26,
+    "name": "FULLB8217DD6 Trail Beta",
+    "description": "Pantofi aderenti pentru trasee",
+    "specifications": "Model Ridge GTX",
+    "price": 50.0,
+    "stock": 3,
+    "supplier": "FULLB8217DD6 Southpeak",
+    "imageUrl": null,
+    "categoryId": 18,
+    "categoryName": "FULLB8217DD6 sport editat",
+    "deliveryMethods": [
+      {
+        "id": 23,
+        "name": "FULLB8217DD6 courier",
+        "cost": 8.5
+      }
+    ]
+  }
+]
+
+================================================================
+Filtrare combinata (AND intre criterii)
+================================================================
+REQUEST: GET http://localhost:5001/api/Product?categoryId=18&minPrice=100&maxPrice=130&inStock=true&supplier=FULLB8217DD6%20Northwind&deliveryMethodIds=23
+RESPONSE: 200
+[
+  {
+    "id": 25,
+    "name": "FULLB8217DD6 Sprint Alpha",
+    "description": "Pantofi pentru alergare, descriere editata",
+    "specifications": "Model Falcon XR carbon",
+    "price": 120.0,
+    "stock": 5,
+    "supplier": "FULLB8217DD6 Northwind",
+    "imageUrl": null,
+    "categoryId": 18,
+    "categoryName": "FULLB8217DD6 sport editat",
+    "deliveryMethods": [
+      {
+        "id": 23,
+        "name": "FULLB8217DD6 courier",
+        "cost": 8.5
+      },
+      {
+        "id": 24,
+        "name": "FULLB8217DD6 pickup",
+        "cost": 0.0
+      }
+    ]
+  }
+]
+
+================================================================
+Validare interval pret invalid
+================================================================
+REQUEST: GET http://localhost:5001/api/Product?minPrice=300&maxPrice=100
+RESPONSE: 400
+"Minimum price cannot be greater than maximum price."
+
+================================================================
+Produse: stergere produs nefolosit in cos/comanda
+================================================================
+REQUEST: DELETE http://localhost:5001/api/Product/27
+Authorization: Bearer <adminToken>
+RESPONSE: 204
+(fara body)
+
+================================================================
+Wishlist: adaugare favorit
+================================================================
+REQUEST: POST http://localhost:5001/api/Wishlist/25
+Authorization: Bearer <clientToken>
+RESPONSE: 204
+(fara body)
+
+================================================================
+Wishlist: adaugare duplicata idempotenta
+================================================================
+REQUEST: POST http://localhost:5001/api/Wishlist/25
+Authorization: Bearer <clientToken>
+RESPONSE: 204
+(fara body)
+
+================================================================
+Wishlist: vizualizare lista
+================================================================
+REQUEST: GET http://localhost:5001/api/Wishlist
+Authorization: Bearer <clientToken>
+RESPONSE: 200
+[
+  {
+    "id": 25,
+    "name": "FULLB8217DD6 Sprint Alpha",
+    "description": "Pantofi pentru alergare, descriere editata",
+    "specifications": "Model Falcon XR carbon",
+    "price": 120.0,
+    "stock": 5,
+    "supplier": "FULLB8217DD6 Northwind",
+    "imageUrl": null,
+    "categoryId": 18,
+    "categoryName": "FULLB8217DD6 sport editat",
+    "deliveryMethods": [
+      {
+        "id": 23,
+        "name": "FULLB8217DD6 courier",
+        "cost": 8.5
+      },
+      {
+        "id": 24,
+        "name": "FULLB8217DD6 pickup",
+        "cost": 0.0
+      }
+    ]
+  }
+]
+
+================================================================
+Wishlist: izolare fata de al doilea utilizator
+================================================================
+REQUEST: GET http://localhost:5001/api/Wishlist
+Authorization: Bearer <client2Token>
+RESPONSE: 200
+[]
+
+================================================================
+Wishlist: stergere favorit
+================================================================
+REQUEST: DELETE http://localhost:5001/api/Wishlist/25
+Authorization: Bearer <clientToken>
+RESPONSE: 204
+(fara body)
+
+================================================================
+Cos: vizualizare cos gol
+================================================================
+REQUEST: GET http://localhost:5001/api/Cart
+Authorization: Bearer <clientToken>
+RESPONSE: 200
+{
+  "items": [],
+  "subtotal": 0,
+  "availableDeliveryMethods": [],
+  "deliveryMethod": null,
+  "deliveryCost": null,
+  "total": null
+}
+
+================================================================
+Cos: adaugare 2 x produs 1
+================================================================
+REQUEST: POST http://localhost:5001/api/Cart/items
+Authorization: Bearer <clientToken>
+Request body:
+{
+  "productId": 25,
+  "quantity": 2
+}
+RESPONSE: 204
+(fara body)
+
+================================================================
+Cos: adaugare 1 x produs 2
+================================================================
+REQUEST: POST http://localhost:5001/api/Cart/items
+Authorization: Bearer <clientToken>
+Request body:
+{
+  "productId": 26,
+  "quantity": 1
+}
+RESPONSE: 204
+(fara body)
+
+================================================================
+Cos: respingere cantitate peste stoc
+================================================================
+REQUEST: POST http://localhost:5001/api/Cart/items
+Authorization: Bearer <clientToken>
+Request body:
+{
+  "productId": 25,
+  "quantity": 99
+}
+RESPONSE: 400
+"Only 5 item(s) are currently in stock."
+
+================================================================
+Cos: vizualizare produse/subtotal/metode comune
+================================================================
+REQUEST: GET http://localhost:5001/api/Cart
+Authorization: Bearer <clientToken>
+RESPONSE: 200
+{
+  "items": [
+    {
+      "product": {
+        "id": 25,
+        "name": "FULLB8217DD6 Sprint Alpha",
+        "description": "Pantofi pentru alergare, descriere editata",
+        "specifications": "Model Falcon XR carbon",
+        "price": 120.0,
+        "stock": 5,
+        "supplier": "FULLB8217DD6 Northwind",
+        "imageUrl": null,
+        "categoryId": 18,
+        "categoryName": "FULLB8217DD6 sport editat",
+        "deliveryMethods": [
+          {
+            "id": 23,
+            "name": "FULLB8217DD6 courier",
+            "cost": 8.5
+          },
+          {
+            "id": 24,
+            "name": "FULLB8217DD6 pickup",
+            "cost": 0.0
+          }
+        ]
+      },
+      "quantity": 2,
+      "lineTotal": 240.0
+    },
+    {
+      "product": {
+        "id": 26,
+        "name": "FULLB8217DD6 Trail Beta",
+        "description": "Pantofi aderenti pentru trasee",
+        "specifications": "Model Ridge GTX",
+        "price": 50.0,
+        "stock": 3,
+        "supplier": "FULLB8217DD6 Southpeak",
+        "imageUrl": null,
+        "categoryId": 18,
+        "categoryName": "FULLB8217DD6 sport editat",
+        "deliveryMethods": [
+          {
+            "id": 23,
+            "name": "FULLB8217DD6 courier",
+            "cost": 8.5
+          }
+        ]
+      },
+      "quantity": 1,
+      "lineTotal": 50.0
+    }
+  ],
+  "subtotal": 290.0,
+  "availableDeliveryMethods": [
+    {
+      "id": 23,
+      "name": "FULLB8217DD6 courier",
+      "cost": 8.5
+    }
+  ],
+  "deliveryMethod": null,
+  "deliveryCost": null,
+  "total": null
+}
+
+================================================================
+Cos: sumar cu livrare si total
+================================================================
+REQUEST: GET http://localhost:5001/api/Cart?deliveryMethodId=23
+Authorization: Bearer <clientToken>
+RESPONSE: 200
+{
+  "items": [
+    {
+      "product": {
+        "id": 25,
+        "name": "FULLB8217DD6 Sprint Alpha",
+        "description": "Pantofi pentru alergare, descriere editata",
+        "specifications": "Model Falcon XR carbon",
+        "price": 120.0,
+        "stock": 5,
+        "supplier": "FULLB8217DD6 Northwind",
+        "imageUrl": null,
+        "categoryId": 18,
+        "categoryName": "FULLB8217DD6 sport editat",
+        "deliveryMethods": [
+          {
+            "id": 23,
+            "name": "FULLB8217DD6 courier",
+            "cost": 8.5
+          },
+          {
+            "id": 24,
+            "name": "FULLB8217DD6 pickup",
+            "cost": 0.0
+          }
+        ]
+      },
+      "quantity": 2,
+      "lineTotal": 240.0
+    },
+    {
+      "product": {
+        "id": 26,
+        "name": "FULLB8217DD6 Trail Beta",
+        "description": "Pantofi aderenti pentru trasee",
+        "specifications": "Model Ridge GTX",
+        "price": 50.0,
+        "stock": 3,
+        "supplier": "FULLB8217DD6 Southpeak",
+        "imageUrl": null,
+        "categoryId": 18,
+        "categoryName": "FULLB8217DD6 sport editat",
+        "deliveryMethods": [
+          {
+            "id": 23,
+            "name": "FULLB8217DD6 courier",
+            "cost": 8.5
+          }
+        ]
+      },
+      "quantity": 1,
+      "lineTotal": 50.0
+    }
+  ],
+  "subtotal": 290.0,
+  "availableDeliveryMethods": [
+    {
+      "id": 23,
+      "name": "FULLB8217DD6 courier",
+      "cost": 8.5
+    }
+  ],
+  "deliveryMethod": {
+    "id": 23,
+    "name": "FULLB8217DD6 courier",
+    "cost": 8.5
+  },
+  "deliveryCost": 8.5,
+  "total": 298.5
+}
+
+================================================================
+Cos: metoda indisponibila pentru toate produsele
+================================================================
+REQUEST: GET http://localhost:5001/api/Cart?deliveryMethodId=24
+Authorization: Bearer <clientToken>
+RESPONSE: 400
+"The selected delivery method is not available for every product in the cart."
+
+================================================================
+Cos: al doilea utilizator are cos separat
+================================================================
+REQUEST: GET http://localhost:5001/api/Cart
+Authorization: Bearer <client2Token>
+RESPONSE: 200
+{
+  "items": [],
+  "subtotal": 0,
+  "availableDeliveryMethods": [],
+  "deliveryMethod": null,
+  "deliveryCost": null,
+  "total": null
+}
+
+================================================================
+Cos: editare cantitate
+================================================================
+REQUEST: PUT http://localhost:5001/api/Cart/items/25
+Authorization: Bearer <clientToken>
+Request body:
+{
+  "quantity": 1
+}
+RESPONSE: 204
+(fara body)
+
+================================================================
+Cos: stergere linie
+================================================================
+REQUEST: DELETE http://localhost:5001/api/Cart/items/26
+Authorization: Bearer <clientToken>
+RESPONSE: 204
+(fara body)
+
+================================================================
+Cos: readaugare produs pentru checkout
+================================================================
+REQUEST: POST http://localhost:5001/api/Cart/items
+Authorization: Bearer <clientToken>
+Request body:
+{
+  "productId": 25,
+  "quantity": 1
+}
+RESPONSE: 204
+(fara body)
+
+================================================================
+Cos: readaugare produs 2 pentru checkout
+================================================================
+REQUEST: POST http://localhost:5001/api/Cart/items
+Authorization: Bearer <clientToken>
+Request body:
+{
+  "productId": 26,
+  "quantity": 1
+}
+RESPONSE: 204
+(fara body)
+
+================================================================
+Cupoane: creare cupon 10% cu conditii/plafon
+================================================================
+REQUEST: POST http://localhost:5001/api/Coupons
+Authorization: Bearer <adminToken>
+Request body:
+{
+  "code": "FULLB8217DD6SAVE",
+  "maximumDiscountAmount": 25,
+  "isActive": true,
+  "maxRedemptions": 1,
+  "validFromUtc": null,
+  "minimumOrderAmount": 100,
+  "discountType": 0,
+  "discountValue": 10,
+  "validUntilUtc": null
+}
+RESPONSE: 201
+{
+  "id": 18,
+  "code": "FULLB8217DD6SAVE",
+  "discountType": 0,
+  "discountValue": 10,
+  "minimumOrderAmount": 100,
+  "maximumDiscountAmount": 25,
+  "validFromUtc": null,
+  "validUntilUtc": null,
+  "maxRedemptions": 1,
+  "redemptionsCount": 0,
+  "isActive": true
+}
+
+================================================================
+Cupoane: listare Admin
+================================================================
+REQUEST: GET http://localhost:5001/api/Coupons
+Authorization: Bearer <adminToken>
+RESPONSE: 200
+[
+  {
+    "id": 18,
+    "code": "FULLB8217DD6SAVE",
+    "discountType": 0,
+    "discountValue": 10.0,
+    "minimumOrderAmount": 100.0,
+    "maximumDiscountAmount": 25.0,
+    "validFromUtc": null,
+    "validUntilUtc": null,
+    "maxRedemptions": 1,
+    "redemptionsCount": 0,
+    "isActive": true
+  }
+]
+
+================================================================
+Cupoane: detalii Admin
+================================================================
+REQUEST: GET http://localhost:5001/api/Coupons/18
+Authorization: Bearer <adminToken>
+RESPONSE: 200
+{
+  "id": 18,
+  "code": "FULLB8217DD6SAVE",
+  "discountType": 0,
+  "discountValue": 10.0,
+  "minimumOrderAmount": 100.0,
+  "maximumDiscountAmount": 25.0,
+  "validFromUtc": null,
+  "validUntilUtc": null,
+  "maxRedemptions": 1,
+  "redemptionsCount": 0,
+  "isActive": true
+}
+
+================================================================
+Cupoane: listare respinsa pentru User
+================================================================
+REQUEST: GET http://localhost:5001/api/Coupons
+Authorization: Bearer <clientToken>
+RESPONSE: 403
+(fara body)
+
+================================================================
+Cupoane: respingere procent peste 100
+================================================================
+REQUEST: POST http://localhost:5001/api/Coupons
+Authorization: Bearer <adminToken>
+Request body:
+{
+  "isActive": true,
+  "discountType": 0,
+  "code": "FULLB8217DD6BAD",
+  "discountValue": 150,
+  "minimumOrderAmount": 0
+}
+RESPONSE: 400
+"A percentage discount cannot exceed 100%."
+
+================================================================
+Cupoane: creare cupon pentru test minimum subtotal
+================================================================
+REQUEST: POST http://localhost:5001/api/Coupons
+Authorization: Bearer <adminToken>
+Request body:
+{
+  "isActive": true,
+  "discountType": 1,
+  "code": "FULLB8217DD6HIGH",
+  "discountValue": 5,
+  "minimumOrderAmount": 500
+}
+RESPONSE: 201
+{
+  "id": 19,
+  "code": "FULLB8217DD6HIGH",
+  "discountType": 1,
+  "discountValue": 5,
+  "minimumOrderAmount": 500,
+  "maximumDiscountAmount": null,
+  "validFromUtc": null,
+  "validUntilUtc": null,
+  "maxRedemptions": null,
+  "redemptionsCount": 0,
+  "isActive": true
+}
+
+================================================================
+Checkout: respingere cupon sub minimumOrderAmount
+================================================================
+REQUEST: POST http://localhost:5001/api/Orders/checkout
+Authorization: Bearer <clientToken>
+Request body:
+{
+  "addressLine2": null,
+  "couponCode": "FULLB8217DD6HIGH",
+  "deliveryMethodId": 23,
+  "postalCode": "010101",
+  "phone": "+40700000000",
+  "recipientName": "Client Test",
+  "city": "Bucuresti",
+  "countryCode": "RO",
+  "region": "Bucuresti",
+  "addressLine1": "Strada API 10"
+}
+RESPONSE: 400
+"The order subtotal must be at least 500.00 RON to use this code."
+
+================================================================
+Checkout: creare sesiune Stripe test cu adresa/livrare/cupon
+================================================================
+REQUEST: POST http://localhost:5001/api/Orders/checkout
+Authorization: Bearer <clientToken>
+Request body:
+{
+  "addressLine2": null,
+  "couponCode": "FULLB8217DD6SAVE",
+  "deliveryMethodId": 23,
+  "postalCode": "010101",
+  "phone": "+40700000000",
+  "recipientName": "Client Test",
+  "city": "Bucuresti",
+  "countryCode": "RO",
+  "region": "Bucuresti",
+  "addressLine1": "Strada API 10"
+}
+RESPONSE: 200
+{
+  "orderId": 14,
+  "status": "PendingPayment",
+  "checkoutUrl": "<URL Stripe Checkout de test, expirata dupa test>",
+  "subtotal": 290.0,
+  "discountAmount": 25.0,
+  "deliveryCost": 8.5,
+  "total": 273.5,
+  "couponCode": "FULLB8217DD6SAVE"
+}
+
+================================================================
+Comenzi: istoric inainte de plata
+================================================================
+REQUEST: GET http://localhost:5001/api/Orders?page=1&pageSize=10
+Authorization: Bearer <clientToken>
+RESPONSE: 200
+{
+  "page": 1,
+  "pageSize": 10,
+  "totalCount": 1,
+  "items": [
+    {
+      "id": 14,
+      "status": "PendingPayment",
+      "createdAtUtc": "2026-10-31T10:02:36.8683103+02:00",
+      "recipientName": "Client Test",
+      "addressLine1": "Strada API 10",
+      "addressLine2": null,
+      "city": "Bucuresti",
+      "region": "Bucuresti",
+      "postalCode": "010101",
+      "countryCode": "RO",
+      "phone": "+40700000000",
+      "deliveryMethodName": "FULLB8217DD6 courier",
+      "deliveryCost": 8.5,
+      "subtotal": 290.0,
+      "discountAmount": 25.0,
+      "total": 273.5,
+      "couponCode": "FULLB8217DD6SAVE",
+      "items": [
+        {
+          "productId": 25,
+          "productName": "FULLB8217DD6 Sprint Alpha",
+          "unitPrice": 120.0,
+          "quantity": 2,
+          "lineTotal": 240.0
+        },
+        {
+          "productId": 26,
+          "productName": "FULLB8217DD6 Trail Beta",
+          "unitPrice": 50.0,
+          "quantity": 1,
+          "lineTotal": 50.0
+        }
+      ]
+    }
+  ]
+}
+
+================================================================
+Comenzi: detalii comanda PendingPayment
+================================================================
+REQUEST: GET http://localhost:5001/api/Orders/14
+Authorization: Bearer <clientToken>
+RESPONSE: 200
+{
+  "id": 14,
+  "status": "PendingPayment",
+  "createdAtUtc": "2026-10-31T10:02:36.8683103+02:00",
+  "recipientName": "Client Test",
+  "addressLine1": "Strada API 10",
+  "addressLine2": null,
+  "city": "Bucuresti",
+  "region": "Bucuresti",
+  "postalCode": "010101",
+  "countryCode": "RO",
+  "phone": "+40700000000",
+  "deliveryMethodName": "FULLB8217DD6 courier",
+  "deliveryCost": 8.5,
+  "subtotal": 290.0,
+  "discountAmount": 25.0,
+  "total": 273.5,
+  "couponCode": "FULLB8217DD6SAVE",
+  "items": [
+    {
+      "productId": 25,
+      "productName": "FULLB8217DD6 Sprint Alpha",
+      "unitPrice": 120.0,
+      "quantity": 2,
+      "lineTotal": 240.0
+    },
+    {
+      "productId": 26,
+      "productName": "FULLB8217DD6 Trail Beta",
+      "unitPrice": 50.0,
+      "quantity": 1,
+      "lineTotal": 50.0
+    }
+  ]
+}
+
+================================================================
+Comenzi: alt utilizator nu poate vedea comanda
+================================================================
+REQUEST: GET http://localhost:5001/api/Orders/14
+Authorization: Bearer <client2Token>
+RESPONSE: 404
+[
+  123,
+  34,
+  116,
+  121,
+  112,
+  101,
+  34,
+  58,
+  34,
+  104,
+  116,
+  116,
+  112,
+  115,
+  58,
+  47,
+  47,
+  116,
+  111,
+  111,
+  108,
+  115,
+  46,
+  105,
+  101,
+  116,
+  102,
+  46,
+  111,
+  114,
+  103,
+  47,
+  104,
+  116,
+  109,
+  108,
+  47,
+  114,
+  102,
+  99,
+  57,
+  49,
+  49,
+  48,
+  35,
+  115,
+  101,
+  99,
+  116,
+  105,
+  111,
+  110,
+  45,
+  49,
+  53,
+  46,
+  53,
+  46,
+  53,
+  34,
+  44,
+  34,
+  116,
+  105,
+  116,
+  108,
+  101,
+  34,
+  58,
+  34,
+  78,
+  111,
+  116,
+  32,
+  70,
+  111,
+  117,
+  110,
+  100,
+  34,
+  44,
+  34,
+  115,
+  116,
+  97,
+  116,
+  117,
+  115,
+  34,
+  58,
+  52,
+  48,
+  52,
+  44,
+  34,
+  116,
+  114,
+  97,
+  99,
+  101,
+  73,
+  100,
+  34,
+  58,
+  34,
+  48,
+  48,
+  45,
+  57,
+  54,
+  51,
+  52,
+  101,
+  51,
+  48,
+  99,
+  101,
+  99,
+  54,
+  50,
+  50,
+  55,
+  102,
+  57,
+  52,
+  51,
+  56,
+  48,
+  52,
+  102,
+  55,
+  102,
+  50,
+  100,
+  50,
+  99,
+  50,
+  101,
+  100,
+  57,
+  45,
+  101,
+  98,
+  53,
+  49,
+  48,
+  54,
+  48,
+  49,
+  52,
+  101,
+  54,
+  48,
+  97,
+  49,
+  52,
+  55,
+  45,
+  48,
+  48,
+  34,
+  125
+]
+
+================================================================
+Comenzi: paginare invalida
+================================================================
+REQUEST: GET http://localhost:5001/api/Orders?page=0&pageSize=10
+Authorization: Bearer <clientToken>
+RESPONSE: 400
+"Page must be at least 1 and pageSize must be between 1 and 100."
+
+================================================================
+Webhook test semnat: checkout.session.completed
+================================================================
+REQUEST: POST http://localhost:5001/api/stripe/webhook
+Request body:
+{
+  "id": "evt_test_f961d1c12c3f407b90ddf4a3dc599908",
+  "object": "event",
+  "api_version": "2026-09-30.endive",
+  "created": 1793433757,
+  "data": {
+    "object": {
+      "id": "<Stripe test session ID redactat>",
+      "object": "checkout.session",
+      "client_reference_id": "14",
+      "metadata": {
+        "orderId": "14"
+      },
+      "payment_status": "paid",
+      "status": "complete",
+      "mode": "payment",
+      "livemode": false,
+      "amount_total": 27350,
+      "currency": "ron"
+    }
+  },
+  "livemode": false,
+  "pending_webhooks": 1,
+  "request": null,
+  "type": "checkout.session.completed"
+}
+RESPONSE: 200
+(fara body)
+Header Stripe-Signature inclus; valoarea HMAC nu este scrisa in transcript. Payload de eveniment de test semnat cu secretul temporar al listenerului local.
+
+================================================================
+Comenzi: status dupa webhook de plata test
+================================================================
+REQUEST: GET http://localhost:5001/api/Orders/14
+Authorization: Bearer <clientToken>
+RESPONSE: 200
+{
+  "id": 14,
+  "status": "Paid",
+  "createdAtUtc": "2026-10-31T10:02:36.8683103+02:00",
+  "recipientName": "Client Test",
+  "addressLine1": "Strada API 10",
+  "addressLine2": null,
+  "city": "Bucuresti",
+  "region": "Bucuresti",
+  "postalCode": "010101",
+  "countryCode": "RO",
+  "phone": "+40700000000",
+  "deliveryMethodName": "FULLB8217DD6 courier",
+  "deliveryCost": 8.5,
+  "subtotal": 290.0,
+  "discountAmount": 25.0,
+  "total": 273.5,
+  "couponCode": "FULLB8217DD6SAVE",
+  "items": [
+    {
+      "productId": 25,
+      "productName": "FULLB8217DD6 Sprint Alpha",
+      "unitPrice": 120.0,
+      "quantity": 2,
+      "lineTotal": 240.0
+    },
+    {
+      "productId": 26,
+      "productName": "FULLB8217DD6 Trail Beta",
+      "unitPrice": 50.0,
+      "quantity": 1,
+      "lineTotal": 50.0
+    }
+  ]
+}
+
+================================================================
+Cupoane: contor dupa webhook Paid
+================================================================
+REQUEST: GET http://localhost:5001/api/Coupons/18
+Authorization: Bearer <adminToken>
+RESPONSE: 200
+{
+  "id": 18,
+  "code": "FULLB8217DD6SAVE",
+  "discountType": 0,
+  "discountValue": 10.0,
+  "minimumOrderAmount": 100.0,
+  "maximumDiscountAmount": 25.0,
+  "validFromUtc": null,
+  "validUntilUtc": null,
+  "maxRedemptions": 1,
+  "redemptionsCount": 1,
+  "isActive": true
+}
+
+================================================================
+Cos: verificare curatare dupa webhook Paid
+================================================================
+REQUEST: GET http://localhost:5001/api/Cart
+Authorization: Bearer <clientToken>
+RESPONSE: 200
+{
+  "items": [],
+  "subtotal": 0,
+  "availableDeliveryMethods": [],
+  "deliveryMethod": null,
+  "deliveryCost": null,
+  "total": null
+}
+
+================================================================
+Stoc: produs 1 dupa plata test
+================================================================
+REQUEST: GET http://localhost:5001/api/Product/25
+RESPONSE: 200
+{
+  "id": 25,
+  "name": "FULLB8217DD6 Sprint Alpha",
+  "description": "Pantofi pentru alergare, descriere editata",
+  "specifications": "Model Falcon XR carbon",
+  "price": 120.0,
+  "stock": 3,
+  "supplier": "FULLB8217DD6 Northwind",
+  "imageUrl": null,
+  "categoryId": 18,
+  "categoryName": "FULLB8217DD6 sport editat",
+  "deliveryMethods": [
+    {
+      "id": 23,
+      "name": "FULLB8217DD6 courier",
+      "cost": 8.5
+    },
+    {
+      "id": 24,
+      "name": "FULLB8217DD6 pickup",
+      "cost": 0.0
+    }
+  ]
+}
+
+================================================================
+Stoc: produs 2 dupa plata test
+================================================================
+REQUEST: GET http://localhost:5001/api/Product/26
+RESPONSE: 200
+{
+  "id": 26,
+  "name": "FULLB8217DD6 Trail Beta",
+  "description": "Pantofi aderenti pentru trasee",
+  "specifications": "Model Ridge GTX",
+  "price": 50.0,
+  "stock": 2,
+  "supplier": "FULLB8217DD6 Southpeak",
+  "imageUrl": null,
+  "categoryId": 18,
+  "categoryName": "FULLB8217DD6 sport editat",
+  "deliveryMethods": [
+    {
+      "id": 23,
+      "name": "FULLB8217DD6 courier",
+      "cost": 8.5
+    }
+  ]
+}
+
+================================================================
+Comenzi: istoric dupa plata si detalii
+================================================================
+REQUEST: GET http://localhost:5001/api/Orders?page=1&pageSize=10
+Authorization: Bearer <clientToken>
+RESPONSE: 200
+{
+  "page": 1,
+  "pageSize": 10,
+  "totalCount": 1,
+  "items": [
+    {
+      "id": 14,
+      "status": "Paid",
+      "createdAtUtc": "2026-10-31T10:02:36.8683103+02:00",
+      "recipientName": "Client Test",
+      "addressLine1": "Strada API 10",
+      "addressLine2": null,
+      "city": "Bucuresti",
+      "region": "Bucuresti",
+      "postalCode": "010101",
+      "countryCode": "RO",
+      "phone": "+40700000000",
+      "deliveryMethodName": "FULLB8217DD6 courier",
+      "deliveryCost": 8.5,
+      "subtotal": 290.0,
+      "discountAmount": 25.0,
+      "total": 273.5,
+      "couponCode": "FULLB8217DD6SAVE",
+      "items": [
+        {
+          "productId": 25,
+          "productName": "FULLB8217DD6 Sprint Alpha",
+          "unitPrice": 120.0,
+          "quantity": 2,
+          "lineTotal": 240.0
+        },
+        {
+          "productId": 26,
+          "productName": "FULLB8217DD6 Trail Beta",
+          "unitPrice": 50.0,
+          "quantity": 1,
+          "lineTotal": 50.0
+        }
+      ]
+    }
+  ]
+}
+
+================================================================
+Cupoane: creare cupon suma fixa pentru test
+================================================================
+REQUEST: POST http://localhost:5001/api/Coupons
+Authorization: Bearer <adminToken>
+Request body:
+{
+  "maximumDiscountAmount": null,
+  "discountValue": 5,
+  "code": "FULLB8217DD6FIX",
+  "minimumOrderAmount": 100,
+  "discountType": 1,
+  "isActive": true
+}
+RESPONSE: 201
+{
+  "id": 20,
+  "code": "FULLB8217DD6FIX",
+  "discountType": 1,
+  "discountValue": 5,
+  "minimumOrderAmount": 100,
+  "maximumDiscountAmount": null,
+  "validFromUtc": null,
+  "validUntilUtc": null,
+  "maxRedemptions": null,
+  "redemptionsCount": 0,
+  "isActive": true
+}
+
+================================================================
+Cos: readaugare produs pentru checkout fix si expirare
+================================================================
+REQUEST: POST http://localhost:5001/api/Cart/items
+Authorization: Bearer <clientToken>
+Request body:
+{
+  "productId": 25,
+  "quantity": 1
+}
+RESPONSE: 204
+(fara body)
+
+================================================================
+Checkout: discount fix si sesiune de test
+================================================================
+REQUEST: POST http://localhost:5001/api/Orders/checkout
+Authorization: Bearer <clientToken>
+Request body:
+{
+  "couponCode": "FULLB8217DD6FIX",
+  "postalCode": "010101",
+  "city": "Bucuresti",
+  "addressLine1": "Strada API 10",
+  "recipientName": "Client Test",
+  "countryCode": "RO",
+  "deliveryMethodId": 23
+}
+RESPONSE: 200
+{
+  "orderId": 15,
+  "status": "PendingPayment",
+  "checkoutUrl": "<URL Stripe Checkout de test, expirata dupa test>",
+  "subtotal": 120.0,
+  "discountAmount": 5.0,
+  "deliveryCost": 8.5,
+  "total": 123.5,
+  "couponCode": "FULLB8217DD6FIX"
+}
+
+STRIPE CLI ACTION: checkout sessions expire <session test-mode> --confirm
+Output CLI: ▸ Running in New business · sandbox (acct_1UUNSU0vfzqAyBJ5)
+{
+  "id": "<sesiune de test expirata>",
+  "object": "checkout.session",
+  "adaptive_pricing": {
+    "enabled": true
+  },
+  "after_expiration": null,
+  "allow_promotion_codes": null,
+  "allowed_payment_method_types": [
+    "card"
+  ],
+  "amount_subtotal": 12350,
+  "amount_total": 12350,
+  "automatic_tax": {
+    "enabled": false,
+    "liability": null,
+    "provider": null,
+    "status": null
+  },
+  "billing_address_collection": null,
+  "branding_settings": {
+    "background_color": "#ffffff",
+    "border_style": "rounded",
+    "button_color": "#0074d4",
+    "display_name": "",
+    "font_family": "default",
+    "icon": null,
+    "logo": null
+  },
+  "cancel_url": "https://example.com/cancel",
+  "client_reference_id": "15",
+  "client_secret": null,
+  "collected_information": null,
+  "consent": null,
+  "consent_collection": null,
+  "created": 1793433739,
+  "currency": "ron",
+  "currency_conversion": null,
+  "custom_fields": [],
+  "custom_text": {
+    "after_submit": null,
+    "shipping_address": null,
+    "submit": null,
+    "terms_of_service_acceptance": null
+  },
+  "customer": null,
+  "customer_account": null,
+  "customer_creation": "if_required",
+  "customer_details": null,
+  "customer_email": null,
+  "discounts": [],
+  "expires_at": 1793520139,
+  "integration_identifier": null,
+  "invoice": null,
+  "invoice_creation": {
+    "enabled": false,
+    "invoice_data": {
+      "account_tax_ids": null,
+      "custom_fields": null,
+      "description": null,
+      "footer": null,
+      "issuer": null,
+      "metadata": {},
+      "rendering_options": null
+    }
+  },
+  "livemode": false,
+  "locale": null,
+  "managed_payments": {
+    "enabled": false
+  },
+  "marketing_attributions": null,
+  "metadata": {
+    "orderId": "15"
+  },
+  "mode": "payment",
+  "origin_context": null,
+  "payment_intent": null,
+  "payment_link": null,
+  "payment_method_collection": "if_required",
+  "payment_method_configuration_details": null,
+  "payment_method_options": {
+    "card": {
+      "request_three_d_secure": "automatic"
+    }
+  },
+  "payment_method_types": [
+    "card"
+  ],
+  "payment_status": "unpaid",
+  "permissions": null,
+  "phone_number_collection": {
+    "enabled": false
+  },
+  "recovered_from": null,
+  "saved_payment_method_options": null,
+  "setup_intent": null,
+  "shipping_address_collection": null,
+  "shipping_cost": null,
+  "shipping_options": [],
+  "status": "expired",
+  "submit_type": null,
+  "subscription": null,
+  "success_url": "https://example.com/success",
+  "total_details": {
+    "amount_discount": 0,
+    "amount_shipping": 0,
+    "amount_tax": 0
+  },
+  "ui_mode": "hosted_page",
+  "url": null,
+  "wallet_options": null
+}
+
+================================================================
+Comenzi: status dupa webhook Stripe CLI de expirare
+================================================================
+REQUEST: GET http://localhost:5001/api/Orders/15
+Authorization: Bearer <clientToken>
+RESPONSE: 200
+{
+  "id": 15,
+  "status": "Cancelled",
+  "createdAtUtc": "2026-10-31T10:02:37.7120568+02:00",
+  "recipientName": "Client Test",
+  "addressLine1": "Strada API 10",
+  "addressLine2": null,
+  "city": "Bucuresti",
+  "region": null,
+  "postalCode": "010101",
+  "countryCode": "RO",
+  "phone": null,
+  "deliveryMethodName": "FULLB8217DD6 courier",
+  "deliveryCost": 8.5,
+  "subtotal": 120.0,
+  "discountAmount": 5.0,
+  "total": 123.5,
+  "couponCode": "FULLB8217DD6FIX",
+  "items": [
+    {
+      "productId": 25,
+      "productName": "FULLB8217DD6 Sprint Alpha",
+      "unitPrice": 120.0,
+      "quantity": 1,
+      "lineTotal": 120.0
+    }
+  ]
+}
+
+================================================================
+Checkout: cupon maxRedemptions deja consumat dupa plata test
+================================================================
+REQUEST: POST http://localhost:5001/api/Orders/checkout
+Authorization: Bearer <clientToken>
+Request body:
+{
+  "couponCode": "FULLB8217DD6SAVE",
+  "postalCode": "010101",
+  "city": "Bucuresti",
+  "addressLine1": "Strada API 10",
+  "recipientName": "Client Test",
+  "countryCode": "RO",
+  "deliveryMethodId": 23
+}
+RESPONSE: 400
+"The bonus code has reached its redemption limit."
+
+CURATARE: s-au eliminat numai resursele legate de prefixul temporar FULLB8217DD6 (conturi, comenzi/linii, cosuri, favorite, cupoane, produse, livrari, categorie). Categoriile si conturile preexistente au fost pastrate.
+
+================================================================
+REZUMAT TESTE
+[TRECUT] register 3 utilizatori temporari
+[TRECUT] login username/email; parola gresita; token Admin
+[TRECUT] acces public si restrictii 401/403
+[TRECUT] CRUD categorii, citire, duplicate si stergere
+[TRECUT] CRUD metode livrare si tarif fix
+[TRECUT] CRUD produse: creare/citire/editare/atribute
+[TRECUT] cautare in name/description/specifications si filtre AND/OR
+[TRECUT] stergere produs Admin
+[TRECUT] wishlist adaugare/listare/izolare/stergere
+[TRECUT] cos, stoc, izolare, sumar livrare, editare si stergere
+[TRECUT] cupoane: creare/listare/detalii/permisiuni/validari
+[TRECUT] checkout totaluri, istoric, detalii, izolare si paginare
+[TRECUT] webhook checkout.session.completed: Paid, stoc, cupon si cos
+[TRECUT] comanda Paid apare in istoricul utilizatorului
+[TRECUT] cupon suma fixa aplicat corect in checkout
+[TRECUT] Stripe CLI livreaza webhook semnat si comanda devine Cancelled - Cancelled
+[TRECUT] limita de utilizari cupon aplicata dupa plata reusita
+Teste trecute: 17 / 17
+Response-urile pentru token JWT si URL-ul Stripe Checkout sunt mascate in acest raport. URL-ul de checkout a fost expirat la final.

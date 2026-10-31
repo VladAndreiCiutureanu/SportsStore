@@ -1,13 +1,8 @@
-@SportsStore.API_HostAddress = https://localhost:7014
+@SportsStore.API_HostAddress = http://localhost:5001
 
-POST {{SportsStore.API_HostAddress}}/api/category
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkNWFhNzE5MS02MjNiLTQ3ZGUtYTJhYy1jYmI5MmMxNjc1ZmIiLCJ1bmlxdWVfbmFtZSI6InRlc3RVc2VyIiwiZW1haWwiOiJ0ZXN0VXNlckBlbWFpbC5jb20iLCJqdGkiOiJmYzdmOTVmMC1mZmJkLTQyM2QtODY5NS1jNzk4NDA3MDkwNTIiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJBZG1pbiIsImV4cCI6MTc5MjMzNjEyOCwiaXNzIjoiU3BvcnRzU3RvcmUuQVBJIiwiYXVkIjoiU3BvcnRzU3RvcmUuQW5ndWxhciJ9.R_TY06XvWukBGZvyEY2IrJGzh5Yketj8mQi-If3DAaU
+GET {{SportsStore.API_HostAddress}}/api/Category/3
 Content-Type: application/json
 
-{
-  "name":"TestUser",
-  "description":"TestPass123*"
-}
 
 
 ###

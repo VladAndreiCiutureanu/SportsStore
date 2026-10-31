@@ -1,0 +1,335 @@
+GHID PENTRU COLEGUL DE FRONTEND
+Integrarea cu SportsStore API
+================================
+
+Acest ghid descrie ce pagini, request-uri si comportamente trebuie conectate la
+API-ul backend existent. Rutele si campurile au fost verificate in proiectul
+SportsStore.API.
+
+1. Conectarea la API
+--------------------
+
+In dezvoltare, profilul HTTP porneste API-ul la:
+http://localhost:5001
+
+Pastreaza adresa intr-o configuratie de mediu, nu imprastia URL-ul prin
+componente. In Development API-ul publica OpenAPI JSON la:
+http://localhost:5001/openapi/v1.json
+
+ATENTIE CORS: Program.cs nu configureaza CORS in prezent. Daca frontend-ul
+ruleaza pe alt origin/port (de exemplu localhost:5173), browserul poate bloca
+request-urile. Solutia trebuie stabilita impreuna cu backend-ul: proxy de
+dezvoltare prin frontend sau configurare CORS explicita in backend. Nu dezactiva
+securitatea browserului ca workaround.
+
+Toate request-urile JSON trebuie sa trimita:
+Content-Type: application/json
+
+2. Autentificare si sesiune
+---------------------------
+
+Ecrane recomandate: Inregistrare, Login, profil/iesire din cont.
+
+Inregistrare:
+POST /api/Auth/register
+{
+  "username": "client1",
+  "email": "client1@example.com",
+  "password": "TestPass123!"
+}
+
+Succes: 201 Created, cu id, username si email. Parola trebuie sa aiba cel putin
+8 caractere, o cifra si o litera mare. Inregistrarea creeaza rolul User.
+
+Login:
+POST /api/Auth/login
+{
+  "usernameOrEmail": "client1",
+  "password": "TestPass123!"
+}
+
+Se accepta username sau email. Succes: 200 OK cu:
+{
+  "token": "<JWT>",
+  "expiresAt": "<data UTC>",
+  "userId": "<id>",
+  "username": "client1",
+  "email": "client1@example.com"
+}
+
+Tokenul expira dupa aproximativ o ora. Pentru request-urile protejate adauga:
+Authorization: Bearer <token>
+
+Backend-ul nu returneaza o proprietate roles separata in LoginResponse. Rolul
+Admin este prezent ca claim in JWT; foloseste-l doar pentru afisarea/ascunderea
+elementelor UI. Serverul ramane cel care decide accesul real. Register creeaza
+doar User; nu exista endpoint public de promovare la Admin.
+
+La logout sterge tokenul si datele de sesiune din frontend. Pentru 401, sterge
+sesiunea si trimite utilizatorul la Login. Nu salva parola in browser.
+
+3. Catalog, categorii, cautare si filtre
+----------------------------------------
+
+Pagini recomandate: lista catalogului, detalii produs, filtre laterale si
+selectare categorie. Aceste rute sunt publice.
+
+GET /api/Category
+GET /api/Category/{categoryId}
+GET /api/Product
+GET /api/Product/{productId}
+GET /api/DeliveryMethod
+
+Produsul raspuns are forma:
+{
+  "id": 45,
+  "name": "Pantofi Sprint Alpha",
+  "description": "Pantofi pentru alergare",
+  "specifications": "Model Falcon XR",
+  "price": 120,
+  "stock": 5,
+  "supplier": "Furnizor X",
+  "imageUrl": null,
+  "categoryId": 12,
+  "categoryName": "Alergare",
+  "deliveryMethods": [
+    { "id": 20, "name": "Curier", "cost": 8.5 }
+  ]
+}
+
+Lista GET /api/Product nu este paginata de backend. Frontend-ul poate afisa
+toate rezultatele sau poate adauga paginare locala.
+
+Cautare:
+GET /api/Product?search=Falcon
+
+search cauta partial, fara diferentiere de majuscule, in name, description si
+specifications. Modelul se cauta prin search in specifications; nu exista
+parametru separat model.
+
+Filtre disponibile:
+GET /api/Product?categoryId=12
+GET /api/Product?minPrice=50&maxPrice=250
+GET /api/Product?inStock=true
+GET /api/Product?inStock=false
+GET /api/Product?minStock=1&maxStock=10
+GET /api/Product?supplier=Furnizor
+GET /api/Product?deliveryMethodIds=20&deliveryMethodIds=21
+
+Mai multe criterii diferite se combina cu AND. Mai multe valori
+deliveryMethodIds se combina cu OR intre acele ID-uri. Construeste query string
+cu encoding corect, mai ales pentru search, supplier si valori cu spatii.
+Intervale minPrice/maxPrice sau minStock/maxStock invalide raspund 400.
+
+Daca stock este 0, afiseaza produsul ca indisponibil si dezactiveaza adaugarea
+in cos. Backend-ul accepta produs cu stock=0, dar respinge adaugarea unei
+cantitati indisponibile.
+
+4. Wishlist / produse favorite
+------------------------------
+
+Necesita login; lista este diferita per utilizator.
+
+GET /api/Wishlist
+POST /api/Wishlist/{productId}
+DELETE /api/Wishlist/{productId}
+
+POST si DELETE raspund 204 No Content. Adaugarea repetata a aceluiasi produs
+ramane idempotenta si raspunde tot 204. La 401 cere autentificare. Produsul
+inexistent raspunde 404.
+
+5. Cos si sumarul de livrare
+----------------------------
+
+Cosul este pe utilizator si necesita token. API-ul nu expune un cos anonim.
+
+GET /api/Cart
+
+Adaugare produs:
+POST /api/Cart/items
+{
+  "productId": 45,
+  "quantity": 2
+}
+
+Schimbare cantitate:
+PUT /api/Cart/items/45
+{
+  "quantity": 1
+}
+
+Stergere produs:
+DELETE /api/Cart/items/45
+
+POST/PUT/DELETE reusesc cu 204 No Content. Stoc insuficient raspunde 400, iar
+produs inexistent raspunde 404.
+
+GET /api/Cart returneaza items, subtotal si availableDeliveryMethods. Lista de
+livrari contine numai metodele comune tuturor produselor din cos. Pana cand
+utilizatorul alege o metoda, deliveryMethod, deliveryCost si total sunt null.
+
+Dupa selectia metodei, fa un request nou:
+GET /api/Cart?deliveryMethodId=20
+
+Raspunsul include deliveryMethod, deliveryCost si total = subtotal + costul
+fix al metodei. Daca metoda nu este disponibila pentru toate produsele, raspunsul
+este 400; daca ID-ul metodei nu exista, raspunsul este 404. Refaceti request-ul
+dupa schimbarea cantitatii sau produselor din cos.
+
+6. Cumparare si Stripe Checkout
+-------------------------------
+
+Ecran recomandat: Checkout cu formular de adresa, selectarea metodei de livrare
+si camp optional pentru codul bonus. Inainte de checkout, afiseaza suma din
+GET /api/Cart?deliveryMethodId={id}.
+
+POST /api/Orders/checkout
+Authorization: Bearer <token>
+{
+  "recipientName": "Client Test",
+  "addressLine1": "Strada Exemplu 10",
+  "addressLine2": null,
+  "city": "Bucuresti",
+  "region": "Bucuresti",
+  "postalCode": "010101",
+  "countryCode": "RO",
+  "phone": "+40700000000",
+  "deliveryMethodId": 20,
+  "couponCode": "SAVE10"
+}
+
+Adresa si metoda de livrare sunt validate de backend. couponCode poate fi null
+sau omis daca nu se foloseste cod bonus. Nu trimite date de card catre API:
+backend-ul nu are campuri de card. La succes, raspunsul contine orderId, status
+PendingPayment, checkoutUrl si sumele calculate:
+{
+  "orderId": 100,
+  "status": "PendingPayment",
+  "checkoutUrl": "https://checkout.stripe.com/...",
+  "subtotal": 290,
+  "discountAmount": 25,
+  "deliveryCost": 8.5,
+  "total": 273.5,
+  "couponCode": "SAVE10"
+}
+
+Deschide checkoutUrl in browser cu navigare completa (window.location.assign),
+nu intr-un iframe. Aceasta este pagina gazduita de Stripe; nu este un formular
+de plata implementat in frontend-ul local. Cheile configurate in backend trebuie
+sa fie Stripe test mode pana la o configurare separata de productie.
+
+Dupa intoarcerea pe URL-ul success/cancel configurat in backend, nu presupune
+ca plata este deja confirmata doar fiindca a fost afisata pagina de succes.
+Webhook-ul poate sosi asincron. Foloseste orderId pentru:
+GET /api/Orders/{orderId}
+sau reincarca:
+GET /api/Orders?page=1&pageSize=10
+
+Statusurile de comanda includ PendingPayment, Paid, PaymentFailed,
+PaidNeedsReview si Cancelled. Dupa webhook-ul platit, backend-ul scade stocul,
+actualizeaza contorul cuponului si elimina produsele cumparate din cos. La
+expirarea Checkout, statusul devine Cancelled. Daca pagina de succes apare
+inaintea webhook-ului, arata starea "in curs de confirmare" si reincarca detaliile
+comenzii; nu modifica statusul din frontend.
+
+Codurile bonus sunt administrate de Admin, dar pagina de checkout le aplica prin
+campul couponCode. Tip discount: 0 procent, 1 suma fixa. Backend-ul valideaza
+activitatea, perioada, subtotalul minim, plafonul procentual si limita de
+utilizari. Endpoint-urile de cupoane sunt GET/POST /api/Coupons pentru Admin;
+nu exista endpoint de editare/stergere.
+
+7. Istoric comenzi
+------------------
+
+Pagina "Comenzile mele" necesita autentificare:
+GET /api/Orders?page=1&pageSize=10
+
+Raspunsul include page, pageSize, totalCount si items. Fiecare comanda contine
+status, CreatedAtUtc, adresa, metoda si costul livrarii, subtotal, reducere,
+total, cod cupon si liniile produselor (nume, pret, cantitate, total linie).
+
+Detalii comanda:
+GET /api/Orders/{orderId}
+
+Un utilizator vede numai propriile comenzi; o comanda a altui utilizator
+raspunde 404. page trebuie sa fie >=1 si pageSize intre 1 si 100; invalid
+raspunde 400. Afiseaza istoricul dupa revenirea din Stripe si permite refresh.
+
+8. Panou de administrare
+------------------------
+
+Doar tokenul cu rol Admin poate apela operatii de scriere. Un User autentificat
+primeste 403, fara token 401. Restrictiile UI ajuta la navigare, dar API-ul
+valideaza oricum rolul.
+
+Categorii:
+GET /api/Category
+POST /api/Category
+PUT /api/Category/{id}
+DELETE /api/Category/{id}
+
+Metode de livrare:
+GET /api/DeliveryMethod
+POST /api/DeliveryMethod
+PUT /api/DeliveryMethod/{id}
+DELETE /api/DeliveryMethod/{id}
+
+Produse:
+GET /api/Product
+POST /api/Product
+PUT /api/Product/{id}
+DELETE /api/Product/{id}
+
+IMPORTANT PUT: backend-ul nu are PATCH si PUT-ul de produs cere corpul complet
+ProductRequest. La editare, fa GET-ul produsului, modifica campul dorit si
+trimite inapoi toate campurile: name, description, specifications, price,
+stock, supplier, imageUrl, categoryId si deliveryMethodIds. Daca omiți
+deliveryMethodIds, colectia implicita goala poate sterge toate metodele asociate.
+Campurile nullable description/specifications/imageUrl pot deveni null daca
+nu le retrimiti. Category PUT cere nume; DeliveryMethod PUT cere nume si cost.
+
+Cupoane:
+GET /api/Coupons
+GET /api/Coupons/{id}
+POST /api/Coupons
+Nu sunt implementate PUT/DELETE pentru cupoane.
+
+Scrierea produselor foloseste corpul ProductRequest, cu deliveryMethodIds ca
+lista de ID-uri numerice. stock=0 este valid. Stergerea unei categorii cu
+produse sau a unei metode atribuite produselor raspunde 409.
+
+9. Tratarea erorilor si stari UI
+--------------------------------
+
+200 OK: citire sau checkout session creata.
+201 Created: resursa creata.
+204 No Content: operatie reusita fara body; nu incerca sa parsezi JSON gol.
+400 Bad Request: validare sau regula de business (ex. stoc, filtru, cupon).
+401 Unauthorized: autentificare lipsa/expirata/incorecta.
+403 Forbidden: autentificat, dar fara rolul necesar.
+404 Not Found: ID inexistent sau comanda care nu apartine utilizatorului.
+409 Conflict: duplicat sau resursa folosita si nu poate fi stearsa.
+502/503: Stripe indisponibil sau neconfigurat.
+
+Unele erori API sunt text simplu, altele JSON (ex. errors/message). Citeste
+Content-Type si suporta atat text, cat si JSON; nu presupune ca fiecare eroare
+are acelasi format.
+
+10. Ordine recomandata de implementare
+--------------------------------------
+
+1. Configurare baseUrl si helper comun pentru request/response.
+2. Register/login, token si gestionarea 401.
+3. Catalog, detalii produs, categorii, cautare si filtre.
+4. Wishlist si starea stocului.
+5. Cos, modificare cantitate si sumar de livrare.
+6. Formular checkout, cod bonus si redirect la checkoutUrl Stripe.
+7. Istoric/detalii comanda si refresh status dupa Stripe return.
+8. Ecrane Admin pentru categorii, metode, produse si cupoane.
+9. Testare manuala cu Responses 401/403/400/404/409 si produse cu stock 0.
+
+Backend-ul a fost testat prin request-uri reale; transcriptul cu request-uri si
+raspunsuri este in TESTARE_API_BACKEND.txt. Scenariul de plata reusita din acel
+test foloseste un webhook de test semnat local, iar expirarea a fost trimisa prin
+Stripe CLI. Nu a fost introdusa o plata cu card pe pagina Checkout in acea
+rulare.

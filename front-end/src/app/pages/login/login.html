@@ -1,0 +1,79 @@
+<div class="row justify-content-center">
+  <div class="col-12 col-sm-10 col-md-7 col-lg-5">
+    <div class="card shadow-sm border-0">
+      <div class="card-body p-4 p-md-5">
+        <h1 class="h4 mb-1">Autentificare</h1>
+        <p class="text-body-secondary mb-4">Intra in contul tau SportsStore.</p>
+
+        @if (info(); as message) {
+          <div class="alert alert-info py-2" role="status">{{ message }}</div>
+        }
+        @if (error(); as message) {
+          <div class="alert alert-danger py-2" role="alert">
+            {{ message }}
+            @if (failedAttempts() >= lockoutAttempts) {
+              <div class="small mt-1">
+                Daca ai gresit parola de {{ lockoutAttempts }} ori, contul este blocat temporar
+                ({{ lockoutMinutes }} minute), chiar daca acum introduci parola corecta. Incearca din nou mai tarziu.
+              </div>
+            } @else if (failedAttempts() >= 3) {
+              <div class="small mt-1">
+                Atentie: dupa {{ lockoutAttempts }} incercari gresite contul se blocheaza {{ lockoutMinutes }} minute.
+                Mai ai {{ attemptsLeft() }} {{ attemptsLeft() === 1 ? 'incercare' : 'incercari' }}.
+              </div>
+            }
+          </div>
+        }
+
+        <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+          <div class="mb-3">
+            <label for="usernameOrEmail" class="form-label">Nume de utilizator sau email</label>
+            <input
+              id="usernameOrEmail"
+              type="text"
+              class="form-control"
+              formControlName="usernameOrEmail"
+              autocomplete="username"
+              autocapitalize="none"
+              spellcheck="false"
+              autofocus
+              [class.is-invalid]="invalid('usernameOrEmail')"
+            />
+            <div class="invalid-feedback">Introdu numele de utilizator sau emailul (minim 3 caractere).</div>
+          </div>
+
+          <div class="mb-3">
+            <label for="password" class="form-label">Parola</label>
+            <app-password-input
+              inputId="password"
+              formControlName="password"
+              autocomplete="current-password"
+              [invalid]="invalid('password')"
+            >
+              <div class="invalid-feedback">Introdu parola (minim 8 caractere).</div>
+            </app-password-input>
+          </div>
+
+          <div class="form-check mb-4">
+            <input id="remember" type="checkbox" class="form-check-input" formControlName="remember" />
+            <label for="remember" class="form-check-label">Tine-ma minte pe acest dispozitiv</label>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 py-2" [disabled]="submitting()">
+            @if (submitting()) {
+              <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+              Se verifica...
+            } @else {
+              Intra in cont
+            }
+          </button>
+        </form>
+
+        <hr class="my-4" />
+        <p class="text-center text-body-secondary mb-0">
+          Nu ai cont? <a routerLink="/register" [queryParams]="{ returnUrl: returnUrl() }">Creeaza unul acum</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

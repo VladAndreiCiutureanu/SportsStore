@@ -1,0 +1,290 @@
+<nav aria-label="breadcrumb" class="mb-2">
+  <ol class="breadcrumb small mb-0">
+    <li class="breadcrumb-item"><a routerLink="/admin/products">Produse</a></li>
+    <li class="breadcrumb-item active" aria-current="page">
+      {{ isEdit() ? (original()?.name ?? 'Editare') : 'Produs nou' }}
+    </li>
+  </ol>
+</nav>
+<h1 class="h3 mb-3">{{ isEdit() ? 'Editeaza produsul' : 'Adauga produs' }}</h1>
+
+@if (loadError(); as message) {
+  <div class="alert alert-danger">
+    {{ message }}
+    <div class="mt-2">
+      <a routerLink="/admin/products" class="btn btn-sm btn-outline-danger">Inapoi la produse</a>
+      <button type="button" class="btn btn-sm btn-link" (click)="load()">Reincearca</button>
+    </div>
+  </div>
+} @else if (loading()) {
+  <div class="d-flex align-items-center gap-2 text-body-secondary py-5 justify-content-center">
+    <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Se incarca...
+  </div>
+} @else {
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="row g-4">
+      <!-- Coloana principala -->
+      <div class="col-12 col-xl-8">
+        <div class="card border-0 shadow-sm mb-4">
+          <div class="card-body p-4">
+            <h2 class="h6 text-uppercase text-body-secondary mb-3">Informatii de baza</h2>
+
+            <div class="mb-3">
+              <label for="name" class="form-label">Nume produs <span class="text-danger">*</span></label>
+              <input id="name" type="text" class="form-control" formControlName="name"
+                     [maxlength]="limits.name" placeholder="ex. Pantofi alergare Sprint Alpha"
+                     [class.is-invalid]="invalid('name')" />
+              <div class="invalid-feedback">
+                @if (has('name', 'required')) { Numele este obligatoriu. } @else { Maxim {{ limits.name }} caractere. }
+              </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-12 col-md-6">
+                <label for="categoryId" class="form-label">Categorie <span class="text-danger">*</span></label>
+                <select id="categoryId" class="form-select" formControlName="categoryId" [class.is-invalid]="invalid('categoryId')">
+                  <option [ngValue]="null" disabled>Alege categoria...</option>
+                  @for (c of categories(); track c.id) {
+                    <option [ngValue]="c.id">{{ c.name }}</option>
+                  }
+                </select>
+                <div class="invalid-feedback">Alege o categorie.</div>
+                @if (quickCategoryOpen()) {
+                  <div class="border rounded p-2 mt-2 bg-body-tertiary" role="group" aria-label="Categorie noua"
+                       (keydown.escape)="closeQuickCategory()">
+                    <label for="quickCategoryName" class="form-label small mb-1">Nume categorie noua</label>
+                    <div class="input-group input-group-sm has-validation">
+                      <input id="quickCategoryName" type="text" class="form-control" [formControl]="quickCategoryName"
+                             maxlength="255" autocomplete="off" placeholder="ex. Ciclism"
+                             [class.is-invalid]="quickCategoryName.invalid && quickCategoryName.touched"
+                             (keydown.enter)="saveQuickCategory($event)" />
+                      <button type="button" class="btn btn-primary" [disabled]="quickCategorySaving()" (click)="saveQuickCategory()">
+                        @if (quickCategorySaving()) { <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> } @else { Creeaza }
+                      </button>
+                      <button type="button" class="btn btn-outline-secondary" (click)="closeQuickCategory()">Renunta</button>
+                      <div class="invalid-feedback">Scrie un nume.</div>
+                    </div>
+                    @if (quickCategoryError(); as message) {
+                      <div class="text-danger small mt-1">{{ message }}</div>
+                    }
+                  </div>
+                } @else {
+                  <div class="form-text">
+                    Nu gasesti categoria potrivita?
+                    <button type="button" class="btn btn-link btn-sm p-0 align-baseline" (click)="openQuickCategory()">
+                      + Creeaza una noua
+                    </button>
+                  </div>
+                }
+              </div>
+              <div class="col-12 col-md-6">
+                <label for="supplier" class="form-label">Furnizor <span class="text-danger">*</span></label>
+                <input id="supplier" type="text" class="form-control" formControlName="supplier"
+                       [maxlength]="limits.supplier" placeholder="ex. Decathlon Romania"
+                       [class.is-invalid]="invalid('supplier')" />
+                <div class="invalid-feedback">
+                  @if (has('supplier', 'required')) { Furnizorul este obligatoriu. } @else { Maxim {{ limits.supplier }} caractere. }
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <div class="d-flex justify-content-between">
+                <label for="description" class="form-label">Descriere</label>
+                <small class="text-body-secondary" [class.text-danger]="descriptionLength() > limits.description">
+                  {{ descriptionLength() }}/{{ limits.description }}
+                </small>
+              </div>
+              <textarea id="description" class="form-control" rows="4" formControlName="description"
+                        placeholder="Ce este produsul, pentru cine e potrivit..."
+                        [class.is-invalid]="invalid('description')"></textarea>
+              <div class="invalid-feedback">Maxim {{ limits.description }} caractere.</div>
+            </div>
+
+            <div>
+              <div class="d-flex justify-content-between">
+                <label for="specifications" class="form-label">Specificatii</label>
+                <small class="text-body-secondary" [class.text-danger]="specificationsLength() > limits.specifications">
+                  {{ specificationsLength() }}/{{ limits.specifications }}
+                </small>
+              </div>
+              <textarea id="specifications" class="form-control" rows="4" formControlName="specifications"
+                        placeholder="ex. Model Falcon XR, greutate 240 g, drop 8 mm, marimi 38-46"
+                        [class.is-invalid]="invalid('specifications')" aria-describedby="specHelp"></textarea>
+              <div class="invalid-feedback">Maxim {{ limits.specifications }} caractere.</div>
+              <div id="specHelp" class="form-text">Clientii pot cauta produsul si dupa textul de aici (ex. modelul).</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+          <div class="card-body p-4">
+            <h2 class="h6 text-uppercase text-body-secondary mb-1">
+              Modalitati de livrare <span class="text-danger">*</span>
+            </h2>
+            <p class="small text-body-secondary mb-3">
+              La checkout clientul poate alege doar metodele comune tuturor produselor din cos.
+            </p>
+            @if (deliveryMethods().length === 0) {
+              <div class="alert alert-warning mb-0">
+                Nu exista metode de livrare. <a routerLink="/admin/delivery" class="alert-link">Adauga una</a>.
+              </div>
+            } @else {
+              <div class="row g-2" role="group" aria-label="Modalitati de livrare">
+                @for (d of deliveryMethods(); track d.id) {
+                  <div class="col-12 col-md-6">
+                    <label class="d-flex align-items-center gap-2 border rounded p-2 h-100"
+                           [class.border-primary]="isDeliverySelected(d.id)"
+                           [class.bg-primary-subtle]="isDeliverySelected(d.id)" style="cursor: pointer">
+                      <input type="checkbox" class="form-check-input m-0" [checked]="isDeliverySelected(d.id)"
+                             (change)="toggleDelivery(d.id, $any($event.target).checked)" />
+                      <span class="flex-grow-1">{{ d.name }}</span>
+                      <span class="small text-body-secondary text-nowrap">{{ d.cost === 0 ? 'Gratuit' : (d.cost | lei) }}</span>
+                    </label>
+                  </div>
+                }
+              </div>
+              @if (invalid('deliveryMethodIds')) {
+                <div class="text-danger small mt-2">Alege cel putin o modalitate de livrare, altfel produsul nu poate fi comandat.</div>
+              }
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Coloana laterala -->
+      <div class="col-12 col-xl-4">
+        <div class="card border-0 shadow-sm mb-4">
+          <div class="card-body p-4">
+            <h2 class="h6 text-uppercase text-body-secondary mb-3">Pret si stoc</h2>
+            <div class="mb-3">
+              <label for="price" class="form-label">Pret <span class="text-danger">*</span></label>
+              <div class="input-group has-validation">
+                <input id="price" type="number" class="form-control" formControlName="price" min="0.01" step="0.01"
+                       inputmode="decimal" placeholder="0,00" [class.is-invalid]="invalid('price')" />
+                <span class="input-group-text">lei</span>
+                <div class="invalid-feedback">
+                  @if (has('price', 'required')) { Pretul este obligatoriu. }
+                  @else if (has('price', 'min')) { Pretul minim este 0,01 lei. }
+                  @else if (has('price', 'decimals')) { Maxim 2 zecimale. }
+                  @else { Pret prea mare. }
+                </div>
+              </div>
+            </div>
+            <div>
+              <label for="stock" class="form-label">Stoc (bucati) <span class="text-danger">*</span></label>
+              <input id="stock" type="number" class="form-control" formControlName="stock" min="0" step="1"
+                     inputmode="numeric" [class.is-invalid]="invalid('stock')" aria-describedby="stockHelp" />
+              <div class="invalid-feedback">
+                @if (has('stock', 'required')) { Stocul este obligatoriu (poate fi 0). }
+                @else if (has('stock', 'integer')) { Stocul trebuie sa fie un numar intreg. }
+                @else { Stocul nu poate fi negativ. }
+              </div>
+              <div id="stockHelp" class="form-text">
+                Cu stoc 0 produsul ramane in catalog, dar apare ca indisponibil.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-4">
+          <div class="card-body p-4">
+            <h2 class="h6 text-uppercase text-body-secondary mb-3">Imagine</h2>
+
+            <!-- Doua moduri: incarcare de pe calculator sau adresa web -->
+            <div class="btn-group w-100 mb-3" role="group" aria-label="Sursa imaginii">
+              <button type="button" class="btn btn-sm" [class.btn-primary]="imageMode() === 'upload'"
+                      [class.btn-outline-primary]="imageMode() !== 'upload'" (click)="imageMode.set('upload')"
+                      [attr.aria-pressed]="imageMode() === 'upload'">Incarca fisier</button>
+              <button type="button" class="btn btn-sm" [class.btn-primary]="imageMode() === 'url'"
+                      [class.btn-outline-primary]="imageMode() !== 'url'" (click)="imageMode.set('url')"
+                      [attr.aria-pressed]="imageMode() === 'url'">Adresa URL</button>
+            </div>
+
+            @if (imageMode() === 'upload') {
+              <!-- Zona de incarcare: click sau trage imaginea aici -->
+              <input #fileInput id="imageFile" type="file" class="visually-hidden" [accept]="uploadAccept"
+                     (change)="onFileSelected($event)" />
+              <label for="imageFile" class="upload-zone d-flex flex-column align-items-center justify-content-center text-center rounded p-3"
+                     [class.drag-over]="dragOver()" [class.disabled]="uploading()"
+                     (dragover)="onDragOver($event)" (dragleave)="dragOver.set(false)" (drop)="onDrop($event)">
+                <span class="fs-3" aria-hidden="true">📷</span>
+                <span class="fw-semibold">Trage imaginea aici</span>
+                <span class="small text-body-secondary">sau <span class="text-primary text-decoration-underline">alege de pe calculator</span></span>
+                <span class="small text-body-secondary mt-1">JPG, PNG, WEBP sau GIF · maxim {{ maxUploadLabel }}</span>
+              </label>
+            } @else {
+              <label for="imageUrl" class="form-label small">Adresa imaginii</label>
+              <input id="imageUrl" type="url" class="form-control" formControlName="imageUrl"
+                     placeholder="https://..." [class.is-invalid]="invalid('imageUrl')"
+                     (input)="imageBroken.set(false)" />
+              <div class="invalid-feedback">Introdu o adresa completa, care incepe cu http:// sau https://</div>
+            }
+
+            @if (uploading()) {
+              <div class="mt-3" aria-live="polite">
+                <div class="d-flex justify-content-between small mb-1">
+                  <span class="text-truncate me-2">Se incarca {{ uploadFileName() }}...</span>
+                  <span>{{ uploadProgress() }}%</span>
+                </div>
+                <div class="progress" style="height: 6px" role="progressbar" aria-label="Progres incarcare"
+                     [attr.aria-valuenow]="uploadProgress()" aria-valuemin="0" aria-valuemax="100">
+                  <div class="progress-bar" [style.width.%]="uploadProgress()"></div>
+                </div>
+                <button type="button" class="btn btn-link btn-sm p-0 mt-1" (click)="cancelUpload()">Anuleaza incarcarea</button>
+              </div>
+            }
+            @if (uploadError(); as message) {
+              <div class="alert alert-danger py-2 small mt-3 mb-0" role="alert">{{ message }}</div>
+            }
+
+            <!-- Previzualizare -->
+            <div class="ratio ratio-4x3 mt-3 rounded border bg-body-tertiary overflow-hidden">
+              @if (localPreview(); as src) {
+                <img [src]="src" alt="Previzualizare imagine in curs de incarcare" class="object-fit-contain opacity-50" />
+              } @else if (imagePreview() && !imageBroken()) {
+                <img [src]="imagePreview()" alt="Previzualizare imagine produs" class="object-fit-contain"
+                     (error)="imageBroken.set(true)" />
+              } @else {
+                <div class="d-flex align-items-center justify-content-center text-body-secondary small text-center p-3">
+                  @if (imageBroken()) { Imaginea nu s-a putut incarca de la aceasta adresa. } @else { Fara imagine }
+                </div>
+              }
+            </div>
+            @if (imagePreview() && !uploading()) {
+              <div class="d-flex justify-content-between align-items-center mt-2 small">
+                <span class="text-body-secondary text-truncate me-2">
+                  {{ isUploadedImage() ? 'Imagine incarcata pe server' : 'Imagine de la adresa externa' }}
+                </span>
+                <button type="button" class="btn btn-link btn-sm text-danger p-0" (click)="removeImage()">Elimina imaginea</button>
+              </div>
+            }
+          </div>
+        </div>
+
+        @if (selectedDelivery().length) {
+          <div class="small text-body-secondary mb-3">
+            Livrare: @for (d of selectedDelivery(); track d.id; let last = $last) { {{ d.name }}@if (!last) {, } }
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Bara de actiuni, lipita jos -->
+    <div class="sticky-bottom bg-body border-top py-3 mt-4">
+      @if (saveError(); as message) {
+        <div class="alert alert-danger py-2 mb-2" role="alert">{{ message }}</div>
+      }
+      <div class="d-flex gap-2 justify-content-end">
+        <a routerLink="/admin/products" class="btn btn-outline-secondary">Anuleaza</a>
+        <button type="submit" class="btn btn-primary px-4" [disabled]="saving()">
+          @if (saving()) {
+            <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span> Se salveaza...
+          } @else {
+            {{ isEdit() ? 'Salveaza modificarile' : 'Adauga produsul' }}
+          }
+        </button>
+      </div>
+    </div>
+  </form>
+}

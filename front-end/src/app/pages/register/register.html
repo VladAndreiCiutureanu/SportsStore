@@ -1,0 +1,109 @@
+<div class="row justify-content-center">
+  <div class="col-12 col-sm-10 col-md-8 col-lg-6">
+    <div class="card shadow-sm border-0">
+      <div class="card-body p-4 p-md-5">
+        <h1 class="h4 mb-1">Creeaza cont</h1>
+        <p class="text-body-secondary mb-4">Dureaza mai putin de un minut.</p>
+
+        @if (error(); as message) {
+          <div class="alert alert-danger py-2" role="alert">{{ message }}</div>
+        }
+
+        <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+          <div class="mb-3">
+            <label for="username" class="form-label">Nume de utilizator</label>
+            <input
+              id="username"
+              type="text"
+              class="form-control"
+              formControlName="username"
+              autocomplete="username"
+              autocapitalize="none"
+              spellcheck="false"
+              autofocus
+              aria-describedby="usernameHelp"
+              [class.is-invalid]="invalid('username')"
+            />
+            <div class="invalid-feedback">
+              @if (serverError('username'); as msg) { {{ msg }} }
+              @else if (has('username', 'required')) { Alege un nume de utilizator. }
+              @else if (has('username', 'minlength')) { Minim 3 caractere. }
+              @else if (has('username', 'maxlength')) { Maxim 255 de caractere. }
+              @else { Foloseste doar litere fara diacritice, cifre si - . _ &#64; + (fara spatii). }
+            </div>
+            <div id="usernameHelp" class="form-text">Il vei folosi la autentificare. Fara spatii sau diacritice.</div>
+          </div>
+
+          <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input
+              id="email"
+              type="email"
+              class="form-control"
+              formControlName="email"
+              autocomplete="email"
+              autocapitalize="none"
+              spellcheck="false"
+              [class.is-invalid]="invalid('email')"
+            />
+            <div class="invalid-feedback">
+              @if (serverError('email'); as msg) { {{ msg }} }
+              @else if (has('email', 'required')) { Emailul este obligatoriu. }
+              @else { Introdu o adresa de email valida (ex. nume&#64;exemplu.ro). }
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="password" class="form-label">Parola</label>
+            <app-password-input
+              inputId="password"
+              formControlName="password"
+              autocomplete="new-password"
+              describedBy="passwordRules"
+              [invalid]="invalid('password')"
+            >
+              <div class="invalid-feedback">
+                @if (serverError('password'); as msg) { {{ msg }} }
+                @else if (has('password', 'required')) { Alege o parola. }
+                @else { Parola nu indeplineste toate regulile de mai jos. }
+              </div>
+            </app-password-input>
+            <app-password-strength id="passwordRules" [password]="password()" />
+          </div>
+
+          <div class="mb-4">
+            <label for="confirmPassword" class="form-label">Confirma parola</label>
+            <app-password-input
+              inputId="confirmPassword"
+              formControlName="confirmPassword"
+              autocomplete="new-password"
+              [invalid]="invalid('confirmPassword')"
+            >
+              <div class="invalid-feedback">
+                @if (has('confirmPassword', 'required')) { Reintrodu parola. }
+                @else { Parolele nu coincid. }
+              </div>
+            </app-password-input>
+            @if (!invalid('confirmPassword') && form.controls.confirmPassword.value && !form.hasError('mismatch')) {
+              <div class="form-text text-success">✓ Parolele coincid</div>
+            }
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 py-2" [disabled]="submitting()">
+            @if (submitting()) {
+              <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+              Se creeaza contul...
+            } @else {
+              Creeaza cont
+            }
+          </button>
+        </form>
+
+        <hr class="my-4" />
+        <p class="text-center text-body-secondary mb-0">
+          Ai deja cont? <a routerLink="/login" [queryParams]="{ returnUrl: returnUrl() }">Autentifica-te</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,116 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container">
+    <a class="navbar-brand fw-bold" routerLink="/">SportsStore</a>
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#mainNav"
+      aria-controls="mainNav"
+      aria-expanded="false"
+      aria-label="Deschide meniul"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="mainNav">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/" routerLinkActive="active"
+             [routerLinkActiveOptions]="{ paths: 'exact', queryParams: 'ignored', matrixParams: 'ignored', fragment: 'ignored' }">
+            Magazin
+          </a>
+        </li>
+        @if (auth.isAdmin()) {
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/admin" routerLinkActive="active">Administrare</a>
+          </li>
+        }
+      </ul>
+
+      <ul class="navbar-nav align-items-lg-center">
+        <!-- Favorite: vizibil mereu; vizitatorul e trimis la Login de authGuard -->
+        <li class="nav-item me-lg-2">
+          <a class="nav-link d-flex align-items-center gap-1" routerLink="/wishlist" routerLinkActive="active"
+             [attr.aria-label]="'Favorite' + (wishlist.count() ? ', ' + wishlist.count() + ' produse' : '')">
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 2.9 4.5 6.6 4.1c2-.2 3.9.8 5.4 2.6 1.5-1.8 3.4-2.8 5.4-2.6 3.7.4 5.7 4.3 4.2 7.7C19.5 16.4 12 21 12 21z"
+                    [attr.fill]="wishlist.count() ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+            </svg>
+            <span class="d-lg-none">Favorite</span>
+            @if (wishlist.count()) {
+              <span class="badge rounded-pill text-bg-danger">{{ wishlist.count() }}</span>
+            }
+          </a>
+        </li>
+        <!-- Cos: vizibil mereu; vizitatorul e trimis la Login de authGuard -->
+        <li class="nav-item me-lg-2">
+          <a class="nav-link d-flex align-items-center gap-1" routerLink="/cart" routerLinkActive="active"
+             [attr.aria-label]="'Cos' + (cart.count() ? ', ' + cart.count() + ' produse' : '')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="9" cy="20" r="1.5" /><circle cx="18" cy="20" r="1.5" />
+              <path d="M2 3h3l2.7 12.4a1.5 1.5 0 0 0 1.5 1.1h8.6a1.5 1.5 0 0 0 1.5-1.2L21 7H6" />
+            </svg>
+            <span class="d-lg-none">Cos</span>
+            @if (cart.count()) {
+              <span class="badge rounded-pill text-bg-primary">{{ cart.count() }}</span>
+            }
+          </a>
+        </li>
+        @if (auth.session(); as s) {
+          <li class="nav-item dropdown">
+            <a
+              class="nav-link dropdown-toggle d-flex align-items-center gap-2"
+              href="#"
+              role="button"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+              [attr.aria-label]="'Meniul contului ' + s.username"
+            >
+              <span class="avatar" [class.avatar-admin]="auth.isAdmin()" aria-hidden="true">{{ initials() }}</span>
+              <span>{{ s.username }}</span>
+              @if (auth.isAdmin()) {
+                <span class="badge text-bg-danger">Admin</span>
+              }
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+              <li class="px-3 py-2">
+                <div class="fw-semibold">{{ s.username }}</div>
+                <div class="small text-body-secondary">{{ s.email }}</div>
+              </li>
+              <li><hr class="dropdown-divider" /></li>
+              <li><a class="dropdown-item" routerLink="/profile">Contul meu</a></li>
+              <li><a class="dropdown-item" routerLink="/cart">Cosul meu</a></li>
+              <li><a class="dropdown-item" routerLink="/wishlist">Favorite</a></li>
+              @if (auth.isAdmin()) {
+                <li><a class="dropdown-item" routerLink="/admin">Panou de administrare</a></li>
+              }
+              <li><hr class="dropdown-divider" /></li>
+              <li>
+                <button type="button" class="dropdown-item text-danger" (click)="auth.logout()">
+                  Iesire din cont
+                </button>
+              </li>
+            </ul>
+          </li>
+        } @else {
+          <li class="nav-item">
+            <a class="nav-link" routerLink="/login" routerLinkActive="active">Autentificare</a>
+          </li>
+          <li class="nav-item">
+            <a class="btn btn-outline-light btn-sm ms-lg-2 mt-2 mt-lg-0" routerLink="/register">Creeaza cont</a>
+          </li>
+        }
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<app-session-expiry />
+
+<main class="container py-4">
+  <router-outlet />
+</main>
+
+<app-toast-container />
+<app-confirm-dialog />

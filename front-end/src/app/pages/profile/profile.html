@@ -1,0 +1,54 @@
+@if (auth.session(); as s) {
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-9 col-lg-7">
+      <div class="card shadow-sm border-0">
+        <div class="card-body p-4 p-md-5">
+          <div class="d-flex align-items-center gap-3 mb-4">
+            <div class="avatar avatar-lg" [class.avatar-admin]="auth.isAdmin()" aria-hidden="true">{{ initials() }}</div>
+            <div>
+              <h1 class="h4 mb-1">{{ s.username }}</h1>
+              <div class="text-body-secondary">{{ s.email }}</div>
+            </div>
+          </div>
+
+          <h2 class="h6 text-uppercase text-body-secondary">Cont</h2>
+          <dl class="row mb-4">
+            <dt class="col-sm-4">Rol</dt>
+            <dd class="col-sm-8">
+              @if (auth.isAdmin()) {
+                <span class="badge text-bg-danger">Administrator</span>
+                <div class="small text-body-secondary mt-1">Ai acces la panoul de administrare.</div>
+              } @else {
+                <span class="badge text-bg-secondary">Client</span>
+              }
+            </dd>
+            <dt class="col-sm-4">ID utilizator</dt>
+            <dd class="col-sm-8"><code class="small">{{ s.userId }}</code></dd>
+          </dl>
+
+          <h2 class="h6 text-uppercase text-body-secondary">Sesiune</h2>
+          <dl class="row mb-4">
+            <dt class="col-sm-4">Expira</dt>
+            <dd class="col-sm-8">
+              {{ s.expiresAt | date: 'dd.MM.yyyy, HH:mm' }}
+              <span class="text-body-secondary">(peste {{ timeLeft() }})</span>
+            </dd>
+            <dt class="col-sm-4">Pastrata</dt>
+            <dd class="col-sm-8">
+              @if (s.remember) {
+                Pe acest dispozitiv, si dupa inchiderea browserului
+              } @else {
+                Pana inchizi browserul
+              }
+            </dd>
+          </dl>
+
+          <div class="d-flex flex-wrap gap-2">
+            <button type="button" class="btn btn-outline-primary" (click)="reauth.open()">Prelungeste sesiunea</button>
+            <button type="button" class="btn btn-outline-danger ms-sm-auto" (click)="auth.logout()">Iesire din cont</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+}

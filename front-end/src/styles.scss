@@ -1,0 +1,107 @@
+/* Stiluri globale. Bootstrap este inclus din angular.json. */
+
+body {
+  background-color: var(--bs-tertiary-bg);
+  min-height: 100vh;
+}
+
+/* Cerc cu initialele utilizatorului (navbar, "Contul meu"). */
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background-color: var(--bs-primary);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+.avatar-lg {
+  width: 3.5rem;
+  height: 3.5rem;
+  font-size: 1.25rem;
+}
+
+.avatar-admin {
+  background-color: var(--bs-danger);
+}
+
+/* Permite textului lung (ex. nume de produs) sa se rupa in interiorul unui flex. */
+.min-w-0 {
+  min-width: 0;
+}
+
+/* Butonul "favorite" (inima). */
+.wishlist-btn {
+  --wish-color: var(--bs-danger);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--bs-secondary-color);
+  background-color: rgba(var(--bs-body-bg-rgb), 0.92);
+  border: 1px solid var(--bs-border-color);
+  border-radius: 50%;
+  width: 2.4rem;
+  height: 2.4rem;
+  justify-content: center;
+  padding: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  transition: transform 0.12s, color 0.12s;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--wish-color);
+    transform: scale(1.08);
+  }
+
+  &.active {
+    color: var(--wish-color);
+  }
+
+  &.with-label {
+    border-radius: var(--bs-border-radius);
+    width: auto;
+    height: auto;
+    padding: 0.5rem 1rem;
+    box-shadow: none;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+  }
+}
+
+/* Zona de incarcare a imaginii (formular produs). */
+.upload-zone {
+  border: 2px dashed var(--bs-border-color);
+  background-color: var(--bs-tertiary-bg);
+  cursor: pointer;
+  min-height: 9rem;
+  transition: border-color 0.15s, background-color 0.15s;
+
+  &:hover,
+  &.drag-over {
+    border-color: var(--bs-primary);
+    background-color: var(--bs-primary-bg-subtle);
+  }
+
+  &.disabled {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+}
+
+/* Focus vizibil cand zona e atinsa din tastatura (input-ul real e ascuns). */
+#imageFile:focus-visible + .upload-zone {
+  outline: 2px solid var(--bs-primary);
+  outline-offset: 2px;
+}
+
+.toast-container {
+  z-index: 1090;
+}

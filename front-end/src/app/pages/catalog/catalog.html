@@ -1,0 +1,191 @@
+<div class="row g-4">
+  <!-- ================= Filtre laterale ================= -->
+  <aside class="col-12 col-lg-3" aria-label="Filtre">
+    <button type="button" class="btn btn-outline-secondary w-100 d-lg-none mb-2" (click)="showFilters.set(!showFilters())"
+            [attr.aria-expanded]="showFilters()" aria-controls="catalogFilters">
+      {{ showFilters() ? 'Ascunde filtrele' : 'Filtre' }}
+      @if (activeCount()) { <span class="badge text-bg-primary ms-1">{{ activeCount() }}</span> }
+    </button>
+
+    <div id="catalogFilters" class="card border-0 shadow-sm d-lg-block" [class.d-none]="!showFilters()">
+      <div class="card-body">
+        <!-- Categorii -->
+        <h2 class="h6 text-uppercase text-body-secondary">Categorii</h2>
+        <div class="list-group list-group-flush mb-4" role="list">
+          <button type="button" class="list-group-item list-group-item-action border-0 rounded px-2 py-1"
+                  [class.active]="filters().category === null" (click)="update({ category: null })"
+                  [attr.aria-current]="filters().category === null">
+            Toate produsele
+          </button>
+          @for (c of categories.items(); track c.id) {
+            <button type="button" class="list-group-item list-group-item-action border-0 rounded px-2 py-1"
+                    [class.active]="filters().category === c.id" (click)="update({ category: c.id })"
+                    [attr.aria-current]="filters().category === c.id" [title]="c.description ?? ''">
+              {{ c.name }}
+            </button>
+          }
+        </div>
+
+        <!-- Pret -->
+        <h2 class="h6 text-uppercase text-body-secondary">Pret (lei)</h2>
+        <form class="mb-4" (ngSubmit)="applyPrice()" novalidate>
+          <div class="d-flex gap-2 align-items-center">
+            <input type="number" class="form-control form-control-sm" placeholder="Min" min="0" step="1"
+                   aria-label="Pret minim" name="minPrice"
+                   [ngModel]="minPriceText()" (ngModelChange)="minPriceText.set($event)" (blur)="applyPrice()"
+                   [class.is-invalid]="priceRangeError()" />
+            <span class="text-body-secondary">–</span>
+            <input type="number" class="form-control form-control-sm" placeholder="Max" min="0" step="1"
+                   aria-label="Pret maxim" name="maxPrice"
+                   [ngModel]="maxPriceText()" (ngModelChange)="maxPriceText.set($event)" (blur)="applyPrice()"
+                   [class.is-invalid]="priceRangeError()" />
+            <button type="submit" class="btn btn-sm btn-outline-primary" [disabled]="priceRangeError()">OK</button>
+          </div>
+          @if (priceRangeError()) {
+            <div class="small text-danger mt-1">Minimul nu poate fi mai mare decat maximul.</div>
+          }
+        </form>
+
+        <!-- Disponibilitate -->
+        <h2 class="h6 text-uppercase text-body-secondary">Disponibilitate</h2>
+        <div class="mb-4" role="radiogroup" aria-label="Disponibilitate">
+          @for (opt of [{ v: 'all', l: 'Toate' }, { v: 'in', l: 'In stoc' }, { v: 'out', l: 'Indisponibile' }]; track opt.v) {
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="availability" [id]="'av-' + opt.v"
+                     [checked]="filters().availability === opt.v" (change)="update({ availability: $any(opt.v) })" />
+              <label class="form-check-label" [for]="'av-' + opt.v">{{ opt.l }}</label>
+            </div>
+          }
+        </div>
+
+        <!-- Livrare -->
+        @if (deliveryMethods().length) {
+          <h2 class="h6 text-uppercase text-body-secondary">Livrare</h2>
+          <div class="mb-1">
+            @for (d of deliveryMethods(); track d.id) {
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" [id]="'dm-' + d.id"
+                       [checked]="filters().delivery.includes(d.id)" (change)="toggleDelivery(d.id, $any($event.target).checked)" />
+                <label class="form-check-label d-flex justify-content-between gap-2" [for]="'dm-' + d.id">
+                  <span>{{ d.name }}</span>
+                  <small class="text-body-secondary text-nowrap">{{ d.cost === 0 ? 'gratuit' : (d.cost | lei) }}</small>
+                </label>
+              </div>
+            }
+          </div>
+          <div class="form-text mb-4">Arata produsele care pot fi livrate cu oricare dintre metodele bifate.</div>
+        }
+
+        <!-- Furnizor -->
+        <h2 class="h6 text-uppercase text-body-secondary">Furnizor</h2>
+        <input type="search" class="form-control form-control-sm mb-4" placeholder="ex. Northwind"
+               aria-label="Furnizor" [ngModel]="supplierText()" (ngModelChange)="onSupplierInput($event)" />
+
+        @if (activeCount()) {
+          <button type="button" class="btn btn-sm btn-outline-secondary w-100" (click)="clearAll()">Sterge toate filtrele</button>
+        }
+      </div>
+    </div>
+  </aside>
+
+  <!-- ================= Rezultate ================= -->
+  <section class="col-12 col-lg-9" aria-labelledby="catalogTitle">
+    <!-- Cautare + sortare -->
+    <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+      <div class="flex-grow-1" style="min-width: 220px">
+        <label for="catalogSearch" class="visually-hidden">Cauta produse</label>
+        <input id="catalogSearch" type="search" class="form-control" placeholder="Cauta dupa nume, descriere sau model..."
+               [ngModel]="searchText()" (ngModelChange)="onSearchInput($event)" autocomplete="off" />
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <label for="catalogSort" class="small text-body-secondary text-nowrap">Sorteaza:</label>
+        <select id="catalogSort" class="form-select" [ngModel]="filters().sort" (ngModelChange)="update({ sort: $event, page: filters().page })">
+          @for (o of sortOptions; track o.key) { <option [value]="o.key">{{ o.label }}</option> }
+        </select>
+      </div>
+    </div>
+
+    <div class="d-flex flex-wrap align-items-baseline gap-2 mb-2">
+      <h1 id="catalogTitle" class="h4 mb-0 me-auto">{{ title() }}</h1>
+      @if (!loading() && !error()) {
+        <span class="small text-body-secondary" aria-live="polite">
+          {{ total() === 0 ? 'Niciun produs' : total() === 1 ? '1 produs' : total() + ' produse' }}
+        </span>
+      }
+    </div>
+    @if (currentCategory()?.description; as d) {
+      <p class="text-body-secondary small mb-2">{{ d }}</p>
+    }
+
+    @if (chips().length) {
+      <div class="d-flex flex-wrap gap-2 mb-3" aria-label="Filtre active">
+        @for (chip of chips(); track chip.label) {
+          <span class="badge rounded-pill text-bg-light border d-inline-flex align-items-center gap-1 fw-normal py-2 px-3">
+            {{ chip.label }}
+            <button type="button" class="btn-close" style="font-size: 0.55rem" [attr.aria-label]="'Elimina ' + chip.label"
+                    (click)="update(chip.clear)"></button>
+          </span>
+        }
+        <button type="button" class="btn btn-link btn-sm p-0" (click)="clearAll()">Sterge tot</button>
+      </div>
+    }
+
+    @if (error(); as message) {
+      <div class="alert alert-danger">{{ message }}</div>
+    } @else if (loading()) {
+      <div class="row row-cols-2 row-cols-md-3 g-3" aria-busy="true" aria-label="Se incarca produsele">
+        @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+          <div class="col">
+            <div class="card border-0 shadow-sm h-100 placeholder-glow">
+              <div class="ratio ratio-4x3 bg-body-tertiary placeholder rounded-top"></div>
+              <div class="card-body">
+                <span class="placeholder col-4 mb-2"></span>
+                <span class="placeholder col-10 mb-2"></span>
+                <span class="placeholder col-6"></span>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    } @else if (total() === 0) {
+      <div class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5">
+          <div class="display-6 mb-2" aria-hidden="true">🔍</div>
+          @if (activeCount()) {
+            <h2 class="h5">Niciun produs nu corespunde cautarii</h2>
+            <p class="text-body-secondary">Incearca alti termeni sau renunta la unele filtre.</p>
+            <button type="button" class="btn btn-outline-primary" (click)="clearAll()">Sterge filtrele</button>
+          } @else {
+            <h2 class="h5">Magazinul nu are inca produse</h2>
+            <p class="text-body-secondary mb-0">Revino curand!</p>
+          }
+        </div>
+      </div>
+    } @else {
+      <div class="row row-cols-2 row-cols-md-3 g-3">
+        @for (p of pageItems(); track p.id) {
+          <div class="col"><app-product-card [product]="p" /></div>
+        }
+      </div>
+
+      @if (pageCount() > 1) {
+        <nav class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-4" aria-label="Paginare produse">
+          <span class="small text-body-secondary">Produsele {{ rangeLabel() }}</span>
+          <ul class="pagination mb-0">
+            <li class="page-item" [class.disabled]="page() === 1">
+              <button type="button" class="page-link" (click)="goToPage(page() - 1)" aria-label="Pagina anterioara">‹</button>
+            </li>
+            @for (n of pages(); track n) {
+              <li class="page-item" [class.active]="n === page()">
+                <button type="button" class="page-link" (click)="goToPage(n)" [attr.aria-current]="n === page() ? 'page' : null">{{ n }}</button>
+              </li>
+            }
+            <li class="page-item" [class.disabled]="page() === pageCount()">
+              <button type="button" class="page-link" (click)="goToPage(page() + 1)" aria-label="Pagina urmatoare">›</button>
+            </li>
+          </ul>
+        </nav>
+      }
+    }
+  </section>
+</div>

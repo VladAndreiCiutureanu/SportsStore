@@ -1,0 +1,160 @@
+<div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+  <div class="me-auto">
+    <h1 class="h3 mb-0">Produse</h1>
+    @if (!loading() && !error()) {
+      <div class="small text-body-secondary">
+        {{ stats().total }} {{ stats().total === 1 ? 'produs' : 'produse' }}
+        @if (stats().outOfStock) { · <span class="text-danger">{{ stats().outOfStock }} fara stoc</span> }
+        @if (stats().lowStock) { · <span class="text-warning-emphasis">{{ stats().lowStock }} cu stoc redus</span> }
+      </div>
+    }
+  </div>
+  <a class="btn btn-primary" routerLink="new" [class.disabled]="missingSetup()" [attr.aria-disabled]="missingSetup()">
+    + Adauga produs
+  </a>
+</div>
+
+@if (missingSetup()) {
+  <div class="alert alert-warning">
+    <strong>Inainte de primul produs</strong> ai nevoie de cel putin
+    @if (categories().length === 0) { <a routerLink="../categories" class="alert-link">o categorie</a> }
+    @if (categories().length === 0 && deliveryMethods().length === 0) { si }
+    @if (deliveryMethods().length === 0) { <a routerLink="../delivery" class="alert-link">o metoda de livrare</a> }.
+  </div>
+}
+
+@if (error(); as message) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center">
+    <span>{{ message }}</span>
+    <button type="button" class="btn btn-sm btn-outline-danger" (click)="load()">Reincearca</button>
+  </div>
+} @else if (loading()) {
+  <div class="d-flex align-items-center gap-2 text-body-secondary py-5 justify-content-center">
+    <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Se incarca produsele...
+  </div>
+} @else {
+  @if (items().length > 0) {
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-body py-2">
+        <div class="row g-2 align-items-center">
+          <div class="col-12 col-md-5">
+            <input type="search" class="form-control" placeholder="Cauta dupa nume, furnizor, specificatii..."
+                   aria-label="Cauta produse" [ngModel]="search()" (ngModelChange)="search.set($event)" />
+          </div>
+          <div class="col-6 col-md-3">
+            <select class="form-select" aria-label="Filtreaza dupa categorie"
+                    [ngModel]="categoryId()" (ngModelChange)="categoryId.set($event)">
+              <option [ngValue]="null">Toate categoriile</option>
+              @for (c of categories(); track c.id) {
+                <option [ngValue]="c.id">{{ c.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="col-6 col-md-2">
+            <select class="form-select" aria-label="Filtreaza dupa stoc"
+                    [ngModel]="stock()" (ngModelChange)="stock.set($event)">
+              <option value="all">Orice stoc</option>
+              <option value="in">In stoc</option>
+              <option value="low">Stoc redus (≤ {{ lowStock }})</option>
+              <option value="out">Fara stoc</option>
+            </select>
+          </div>
+          <div class="col-12 col-md-2 text-md-end">
+            @if (hasFilters()) {
+              <button type="button" class="btn btn-link btn-sm" (click)="clearFilters()">Sterge filtrele</button>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (items().length === 0) {
+    <div class="card border-0 shadow-sm">
+      <div class="card-body text-center py-5">
+        <div class="display-6 mb-2" aria-hidden="true">📦</div>
+        <h2 class="h5">Catalogul este gol</h2>
+        <p class="text-body-secondary mb-3">Adauga primul produs ca sa apara in magazin.</p>
+        @if (!missingSetup()) {
+          <a class="btn btn-primary" routerLink="new">+ Adauga produs</a>
+        }
+      </div>
+    </div>
+  } @else if (filtered().length === 0) {
+    <div class="text-center text-body-secondary py-5">
+      Niciun produs nu corespunde filtrelor.
+      <button type="button" class="btn btn-link p-0 align-baseline" (click)="clearFilters()">Sterge filtrele</button>
+    </div>
+  } @else {
+    <div class="card border-0 shadow-sm">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th scope="col" style="width: 64px"><span class="visually-hidden">Imagine</span></th>
+              <th scope="col">Produs</th>
+              <th scope="col">Categorie</th>
+              <th scope="col" class="text-end">Pret</th>
+              <th scope="col" class="text-end">Stoc</th>
+              <th scope="col" class="d-none d-xl-table-cell">Livrare</th>
+              <th scope="col" class="text-end">Actiuni</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of filtered(); track p.id) {
+              <tr [class.opacity-50]="deletingId() === p.id">
+                <td>
+                  @if (p.imageUrl) {
+                    <img [src]="p.imageUrl" [alt]="p.name" class="rounded border object-fit-cover" width="48" height="48" />
+                  } @else {
+                    <div class="rounded border bg-body-tertiary d-flex align-items-center justify-content-center text-body-secondary small"
+                         style="width: 48px; height: 48px" aria-hidden="true">—</div>
+                  }
+                </td>
+                <td>
+                  <a [routerLink]="[p.id, 'edit']" class="fw-semibold text-decoration-none">{{ p.name }}</a>
+                  <div class="small text-body-secondary">{{ p.supplier }}</div>
+                </td>
+                <td>{{ p.categoryName }}</td>
+                <td class="text-end text-nowrap">{{ p.price | lei }}</td>
+                <td class="text-end">
+                  @if (p.stock === 0) {
+                    <span class="badge text-bg-danger">Fara stoc</span>
+                  } @else if (p.stock <= lowStock) {
+                    <span class="badge text-bg-warning">{{ p.stock }}</span>
+                  } @else {
+                    {{ p.stock }}
+                  }
+                </td>
+                <td class="d-none d-xl-table-cell small">
+                  @for (d of p.deliveryMethods; track d.id; let last = $last) {
+                    {{ d.name }}@if (!last) {, }
+                  } @empty {
+                    <span class="text-danger">Nicio metoda</span>
+                  }
+                </td>
+                <td class="text-end text-nowrap">
+                  <a class="btn btn-sm btn-outline-primary" [routerLink]="[p.id, 'edit']">Editeaza</a>
+                  <button type="button" class="btn btn-sm btn-outline-danger ms-1"
+                          [disabled]="deletingId() === p.id" (click)="remove(p)"
+                          [attr.aria-label]="'Sterge ' + p.name">
+                    @if (deletingId() === p.id) {
+                      <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                    } @else {
+                      Sterge
+                    }
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (hasFilters()) {
+        <div class="card-footer bg-transparent small text-body-secondary">
+          Afisate {{ filtered().length }} din {{ items().length }}
+        </div>
+      }
+    </div>
+  }
+}

@@ -1,0 +1,148 @@
+@if (loading()) {
+  <div class="row g-4 placeholder-glow" aria-busy="true" aria-label="Se incarca produsul">
+    <div class="col-12 col-md-6"><div class="ratio ratio-4x3 placeholder rounded"></div></div>
+    <div class="col-12 col-md-6">
+      <span class="placeholder col-3 mb-3"></span>
+      <span class="placeholder col-9 placeholder-lg mb-3"></span>
+      <span class="placeholder col-4 placeholder-lg mb-4"></span>
+      <span class="placeholder col-12 mb-2"></span>
+      <span class="placeholder col-10"></span>
+    </div>
+  </div>
+} @else if (notFound()) {
+  <div class="text-center py-5">
+    <div class="display-5 mb-2" aria-hidden="true">🤷</div>
+    <h1 class="h4">Produsul nu exista</h1>
+    <p class="text-body-secondary">Poate a fost scos din catalog sau linkul este gresit.</p>
+    <a routerLink="/" class="btn btn-primary">Inapoi la magazin</a>
+  </div>
+} @else if (error(); as message) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center">
+    <span>{{ message }}</span>
+    <button type="button" class="btn btn-sm btn-outline-danger" (click)="load(+id())">Reincearca</button>
+  </div>
+} @else if (product(); as p) {
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small mb-0">
+      <li class="breadcrumb-item"><a routerLink="/">Magazin</a></li>
+      <li class="breadcrumb-item"><a routerLink="/" [queryParams]="{ category: p.categoryId }">{{ p.categoryName }}</a></li>
+      <li class="breadcrumb-item active text-truncate" aria-current="page">{{ p.name }}</li>
+    </ol>
+  </nav>
+
+  <div class="row g-4 mb-5">
+    <!-- Imagine -->
+    <div class="col-12 col-md-6">
+      <div class="ratio ratio-4x3 bg-body rounded shadow-sm overflow-hidden">
+        @if (p.imageUrl && !imageBroken()) {
+          <img [src]="p.imageUrl" [alt]="p.name" class="object-fit-contain p-3" (error)="imageBroken.set(true)" />
+        } @else {
+          <div class="d-flex flex-column align-items-center justify-content-center text-body-tertiary">
+            <span class="display-3" aria-hidden="true">🏷️</span>
+            <small>Fara imagine</small>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Informatii + cumparare -->
+    <div class="col-12 col-md-6">
+      <a routerLink="/" [queryParams]="{ category: p.categoryId }" class="small text-decoration-none">{{ p.categoryName }}</a>
+      <h1 class="h3 mt-1 mb-2">{{ p.name }}</h1>
+      <div class="small text-body-secondary mb-3">Furnizor: {{ p.supplier }}</div>
+
+      <div class="display-6 fw-bold mb-2">{{ p.price | lei }}</div>
+      <div class="mb-4"><app-stock-badge [stock]="p.stock" /></div>
+
+      @if (p.stock > 0) {
+        <div class="d-flex flex-wrap gap-2 align-items-end mb-2">
+          <div>
+            <label for="qty" class="form-label small mb-1">Cantitate</label>
+            <select id="qty" class="form-select" style="width: 6rem" [ngModel]="quantity()" (ngModelChange)="quantity.set(+$event)">
+              @for (n of quantityOptions(); track n) { <option [value]="n">{{ n }}</option> }
+            </select>
+          </div>
+          <button type="button" class="btn btn-primary btn-lg flex-grow-1" [disabled]="adding()" (click)="addToCart()">
+            @if (adding()) {
+              <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span> Se adauga...
+            } @else {
+              Adauga in cos
+            }
+          </button>
+        </div>
+        @if (p.stock <= lowStock) {
+          <div class="small text-warning-emphasis mb-3">Grabeste-te: au mai ramas doar {{ p.stock }} {{ p.stock === 1 ? 'bucata' : 'bucati' }}.</div>
+        }
+      } @else {
+        <div class="alert alert-secondary mb-3">
+          Produsul nu este disponibil momentan si nu poate fi adaugat in cos.
+        </div>
+        <button type="button" class="btn btn-secondary btn-lg w-100 mb-3" disabled>Indisponibil</button>
+      }
+
+      <!-- Favorite -->
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <app-wishlist-button [product]="p" [withLabel]="true" />
+        @if (p.stock === 0) {
+          <span class="small text-body-secondary">Salveaza-l ca sa-l gasesti usor cand revine in stoc.</span>
+        }
+      </div>
+
+      <!-- Livrare -->
+      <div class="card border-0 bg-body-tertiary mt-3">
+        <div class="card-body py-3">
+          <h2 class="h6 mb-2">Livrare</h2>
+          @if (p.deliveryMethods.length) {
+            <ul class="list-unstyled mb-0 small">
+              @for (d of p.deliveryMethods; track d.id) {
+                <li class="d-flex justify-content-between py-1">
+                  <span>{{ d.name }}</span>
+                  <span class="fw-semibold">{{ d.cost === 0 ? 'Gratuit' : (d.cost | lei) }}</span>
+                </li>
+              }
+            </ul>
+            <div class="form-text mt-2">Costul livrarii se adauga o singura data pe comanda, la checkout.</div>
+          } @else {
+            <div class="small text-body-secondary">Momentan nu exista optiuni de livrare pentru acest produs.</div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Descriere + specificatii -->
+  <div class="row g-4 mb-5">
+    <div class="col-12 col-lg-7">
+      <h2 class="h5">Descriere</h2>
+      @if (p.description) {
+        <p class="text-body" style="white-space: pre-line">{{ p.description }}</p>
+      } @else {
+        <p class="text-body-secondary">Produsul nu are inca o descriere.</p>
+      }
+    </div>
+    <div class="col-12 col-lg-5">
+      <h2 class="h5">Specificatii</h2>
+      @if (p.specifications) {
+        <div class="card border-0 shadow-sm">
+          <div class="card-body small" style="white-space: pre-line">{{ p.specifications }}</div>
+        </div>
+      } @else {
+        <p class="text-body-secondary">Nu sunt specificatii disponibile.</p>
+      }
+    </div>
+  </div>
+
+  @if (similar().length) {
+    <section aria-labelledby="similarTitle">
+      <div class="d-flex justify-content-between align-items-baseline mb-3">
+        <h2 id="similarTitle" class="h5 mb-0">Alte produse din {{ p.categoryName }}</h2>
+        <a routerLink="/" [queryParams]="{ category: p.categoryId }" class="small">Vezi toate</a>
+      </div>
+      <div class="row row-cols-2 row-cols-md-4 g-3">
+        @for (s of similar(); track s.id) {
+          <div class="col"><app-product-card [product]="s" /></div>
+        }
+      </div>
+    </section>
+  }
+}

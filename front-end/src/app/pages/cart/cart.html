@@ -1,0 +1,179 @@
+<div class="d-flex flex-wrap align-items-baseline gap-2 mb-3">
+  <h1 class="h3 mb-0 me-auto">Cosul meu</h1>
+  @if (cart.loaded() && !cart.isEmpty()) {
+    <span class="small text-body-secondary">{{ itemCount() }} {{ itemCount() === 1 ? 'produs' : 'produse' }}</span>
+  }
+</div>
+
+@if (cart.error() && !cart.loaded()) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center">
+    <span>{{ cart.error() }}</span>
+    <button type="button" class="btn btn-sm btn-outline-danger" (click)="cart.refresh().subscribe()">Reincearca</button>
+  </div>
+} @else if (!cart.loaded()) {
+  <div class="row g-4 placeholder-glow" aria-busy="true" aria-label="Se incarca cosul">
+    <div class="col-12 col-lg-8">
+      @for (i of [1, 2]; track i) {
+        <div class="card border-0 shadow-sm mb-3"><div class="card-body d-flex gap-3">
+          <div class="placeholder rounded" style="width: 88px; height: 88px"></div>
+          <div class="flex-grow-1"><span class="placeholder col-6 mb-2"></span><span class="placeholder col-3"></span></div>
+        </div></div>
+      }
+    </div>
+    <div class="col-12 col-lg-4"><div class="card border-0 shadow-sm"><div class="card-body">
+      <span class="placeholder col-12 mb-2"></span><span class="placeholder col-8"></span>
+    </div></div></div>
+  </div>
+} @else if (cart.isEmpty()) {
+  <div class="card border-0 shadow-sm">
+    <div class="card-body text-center py-5">
+      <div class="display-5 mb-2" aria-hidden="true">🛒</div>
+      <h2 class="h5">Cosul tau este gol</h2>
+      <p class="text-body-secondary">Adauga produse din magazin si le vei gasi aici.</p>
+      <a routerLink="/" class="btn btn-primary">Mergi la magazin</a>
+    </div>
+  </div>
+} @else {
+  <div class="row g-4">
+    <!-- ================= Produse ================= -->
+    <section class="col-12 col-lg-8" aria-label="Produse in cos">
+      @if (cart.problems().length) {
+        <div class="alert alert-warning" role="alert">
+          Unele produse nu mai sunt disponibile in cantitatea dorita. Ajusteaza-le ca sa poti plasa comanda.
+        </div>
+      }
+
+      <div class="card border-0 shadow-sm">
+        <ul class="list-group list-group-flush">
+          @for (line of summary().items; track line.product.id) {
+            @let p = line.product;
+            @let busy = cart.isBusy(p.id);
+            <li class="list-group-item py-3" [class.opacity-50]="busy" [attr.aria-busy]="busy">
+              <div class="d-flex gap-3">
+                <a [routerLink]="['/products', p.id]" class="flex-shrink-0 rounded border bg-body-tertiary overflow-hidden d-flex align-items-center justify-content-center"
+                   style="width: 88px; height: 88px" tabindex="-1" [attr.aria-label]="p.name">
+                  @if (p.imageUrl) {
+                    <img [src]="p.imageUrl" [alt]="p.name" class="w-100 h-100 object-fit-contain p-1" />
+                  } @else {
+                    <span aria-hidden="true">🏷️</span>
+                  }
+                </a>
+
+                <div class="flex-grow-1 min-w-0">
+                  <div class="d-flex flex-wrap justify-content-between gap-2">
+                    <div class="min-w-0">
+                      <a [routerLink]="['/products', p.id]" class="fw-semibold text-body text-decoration-none">{{ p.name }}</a>
+                      <div class="small text-body-secondary">{{ p.categoryName }} · {{ p.price | lei }} / buc.</div>
+                    </div>
+                    <div class="fw-bold text-nowrap">{{ line.lineTotal | lei }}</div>
+                  </div>
+
+                  <!-- Avertizari de stoc -->
+                  @if (p.stock === 0) {
+                    <div class="small text-danger mt-1">Produsul nu mai este in stoc. Scoate-l din cos ca sa poti comanda.</div>
+                  } @else if (tooMany(line)) {
+                    <div class="small text-danger mt-1">
+                      Mai sunt doar {{ p.stock }} {{ p.stock === 1 ? 'bucata' : 'bucati' }}.
+                      <button type="button" class="btn btn-link btn-sm p-0 align-baseline" (click)="fitToStock(line)">Ajusteaza la {{ p.stock }}</button>
+                    </div>
+                  } @else if (p.stock <= 5) {
+                    <div class="small text-warning-emphasis mt-1">Ultimele {{ p.stock }} in stoc</div>
+                  }
+
+                  <div class="d-flex flex-wrap align-items-center gap-3 mt-2">
+                    @if (p.stock > 0) {
+                      <div class="input-group input-group-sm" style="width: 8.5rem" role="group" [attr.aria-label]="'Cantitate ' + p.name">
+                        <button type="button" class="btn btn-outline-secondary" [disabled]="busy" (click)="setQuantity(line, line.quantity - 1)"
+                                [attr.aria-label]="line.quantity === 1 ? 'Scoate ' + p.name + ' din cos' : 'Scade cantitatea'">
+                          {{ line.quantity === 1 ? '🗑' : '−' }}
+                        </button>
+                        <input type="number" class="form-control text-center" min="1" [max]="maxFor(line)" [value]="line.quantity"
+                               [disabled]="busy" [attr.aria-label]="'Cantitate ' + p.name"
+                               (change)="setQuantity(line, $any($event.target).value, $any($event.target))"
+                               (keydown.enter)="$any($event.target).blur()" />
+                        <button type="button" class="btn btn-outline-secondary" [disabled]="busy || line.quantity >= p.stock"
+                                (click)="setQuantity(line, line.quantity + 1)" aria-label="Creste cantitatea">+</button>
+                      </div>
+                    }
+                    <button type="button" class="btn btn-link btn-sm text-danger p-0" [disabled]="busy" (click)="remove(line)">
+                      Sterge
+                    </button>
+                    @if (busy) { <span class="spinner-border spinner-border-sm text-secondary" aria-label="Se actualizeaza"></span> }
+                  </div>
+                </div>
+              </div>
+            </li>
+          }
+        </ul>
+      </div>
+
+      <a routerLink="/" class="btn btn-link px-0 mt-2">‹ Continua cumparaturile</a>
+    </section>
+
+    <!-- ================= Sumar ================= -->
+    <aside class="col-12 col-lg-4" aria-label="Sumarul comenzii">
+      <div class="card border-0 shadow-sm position-sticky" style="top: 1rem">
+        <div class="card-body p-4">
+          <h2 class="h5 mb-3">Sumar</h2>
+
+          <div class="d-flex justify-content-between mb-3">
+            <span>Subtotal ({{ itemCount() }} {{ itemCount() === 1 ? 'produs' : 'produse' }})</span>
+            <span class="fw-semibold">{{ summary().subtotal | lei }}</span>
+          </div>
+
+          <h3 class="h6">Livrare</h3>
+          @if (cart.noCommonDelivery()) {
+            <div class="alert alert-warning small mb-3">
+              Produsele din cos nu au nicio metoda de livrare comuna, asa ca nu pot fi trimise in aceeasi comanda.
+              Scoate unele produse sau plaseaza comenzi separate.
+            </div>
+          } @else {
+            <div class="mb-3" role="radiogroup" aria-label="Metoda de livrare">
+              @for (d of summary().availableDeliveryMethods; track d.id) {
+                <label class="d-flex align-items-center gap-2 border rounded p-2 mb-2"
+                       [class.border-primary]="cart.deliveryId() === d.id" [class.bg-primary-subtle]="cart.deliveryId() === d.id"
+                       style="cursor: pointer">
+                  <input type="radio" class="form-check-input m-0" name="delivery" [value]="d.id"
+                         [checked]="cart.deliveryId() === d.id" [disabled]="cart.loading()"
+                         (change)="cart.chooseDelivery(d.id)" />
+                  <span class="flex-grow-1">{{ d.name }}</span>
+                  <span class="small fw-semibold text-nowrap">{{ d.cost === 0 ? 'Gratuit' : (d.cost | lei) }}</span>
+                </label>
+              }
+              <div class="form-text">Sunt afisate doar metodele disponibile pentru toate produsele din cos.</div>
+            </div>
+          }
+
+          <hr />
+          @if (summary().deliveryMethod; as dm) {
+            <div class="d-flex justify-content-between small mb-1">
+              <span>Livrare ({{ dm.name }})</span>
+              <span>{{ summary().deliveryCost === 0 ? 'Gratuit' : (summary().deliveryCost | lei) }}</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-baseline mb-3">
+              <span class="fw-semibold">Total</span>
+              <span class="fs-4 fw-bold">{{ summary().total | lei }}</span>
+            </div>
+          } @else {
+            <div class="d-flex justify-content-between align-items-baseline mb-1">
+              <span class="fw-semibold">Total</span>
+              <span class="fs-5 text-body-secondary">—</span>
+            </div>
+            <p class="small text-body-secondary mb-3">Alege metoda de livrare ca sa vezi totalul.</p>
+          }
+
+          <button type="button" class="btn btn-primary btn-lg w-100" disabled
+                  [title]="cart.readyForCheckout() ? 'Finalizarea comenzii se adauga la pasul urmator' : ''">
+            @if (cart.loading()) { <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span> }
+            Finalizeaza comanda
+          </button>
+          @if (cart.readyForCheckout()) {
+            <p class="small text-body-secondary text-center mt-2 mb-0">Pagina de finalizare a comenzii vine la pasul 6.</p>
+          } @else if (cart.problems().length) {
+            <p class="small text-danger text-center mt-2 mb-0">Rezolva produsele marcate cu rosu.</p>
+          }
+        </div>
+      </div>
+    </aside>
+  </div>
+}

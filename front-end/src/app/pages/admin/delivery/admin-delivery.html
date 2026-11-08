@@ -1,0 +1,110 @@
+<h1 class="h3 mb-1">Metode de livrare</h1>
+<p class="text-body-secondary mb-3">
+  Fiecare metoda are un tarif fix, adaugat o singura data pe comanda. Pune 0 pentru livrare gratuita (ex. ridicare din magazin).
+</p>
+
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-body">
+    <h2 class="h6 mb-3">Metoda noua</h2>
+    <form [formGroup]="createForm" (ngSubmit)="create()" novalidate class="row g-2 align-items-start">
+      <div class="col-12 col-md-6">
+        <label for="newName" class="visually-hidden">Nume</label>
+        <input id="newName" class="form-control" formControlName="name" placeholder="Nume * (ex. Curier rapid)" maxlength="255"
+               [class.is-invalid]="createForm.controls.name.invalid && createForm.controls.name.touched" />
+        <div class="invalid-feedback">Numele este obligatoriu.</div>
+      </div>
+      <div class="col-8 col-md-4">
+        <label for="newCost" class="visually-hidden">Cost</label>
+        <div class="input-group has-validation">
+          <input id="newCost" type="number" class="form-control" formControlName="cost" placeholder="Cost *"
+                 min="0" step="0.01" inputmode="decimal"
+                 [class.is-invalid]="createForm.controls.cost.invalid && createForm.controls.cost.touched" />
+          <span class="input-group-text">lei</span>
+          <div class="invalid-feedback">Costul este obligatoriu (minim 0).</div>
+        </div>
+      </div>
+      <div class="col-4 col-md-2 d-grid">
+        <button type="submit" class="btn btn-primary" [disabled]="creating()">
+          @if (creating()) { <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> } @else { Adauga }
+        </button>
+      </div>
+      @if (createError(); as message) {
+        <div class="col-12"><div class="alert alert-danger py-2 mb-0">{{ message }}</div></div>
+      }
+    </form>
+  </div>
+</div>
+
+@if (error(); as message) {
+  <div class="alert alert-danger d-flex justify-content-between align-items-center">
+    <span>{{ message }}</span>
+    <button type="button" class="btn btn-sm btn-outline-danger" (click)="load()">Reincearca</button>
+  </div>
+} @else if (loading()) {
+  <div class="text-center text-body-secondary py-5">
+    <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span> Se incarca...
+  </div>
+} @else if (items().length === 0) {
+  <div class="text-center text-body-secondary py-5">Nu exista metode de livrare. Adauga prima metoda mai sus.</div>
+} @else {
+  <div class="card border-0 shadow-sm">
+    <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">Nume</th>
+            <th scope="col" class="text-end">Cost</th>
+            <th scope="col" class="text-end">Produse</th>
+            <th scope="col" class="text-end">Actiuni</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (m of items(); track m.id) {
+            @if (editingId() === m.id) {
+              <tr class="table-active">
+                <td colspan="4">
+                  <form [formGroup]="editForm" (ngSubmit)="saveEdit(m)" novalidate class="row g-2 align-items-start"
+                        (keydown.escape)="cancelEdit()">
+                    <div class="col-12 col-md-5">
+                      <input class="form-control" formControlName="name" aria-label="Nume metoda" maxlength="255"
+                             [class.is-invalid]="editForm.controls.name.invalid && editForm.controls.name.touched" />
+                      <div class="invalid-feedback">Numele este obligatoriu.</div>
+                    </div>
+                    <div class="col-8 col-md-4">
+                      <div class="input-group has-validation">
+                        <input type="number" class="form-control" formControlName="cost" aria-label="Cost" min="0" step="0.01"
+                               [class.is-invalid]="editForm.controls.cost.invalid && editForm.controls.cost.touched" />
+                        <span class="input-group-text">lei</span>
+                        <div class="invalid-feedback">Minim 0.</div>
+                      </div>
+                    </div>
+                    <div class="col-4 col-md-3 text-md-end">
+                      <button type="submit" class="btn btn-sm btn-primary" [disabled]="busyId() === m.id">Salveaza</button>
+                      <button type="button" class="btn btn-sm btn-outline-secondary ms-1" (click)="cancelEdit()">Renunta</button>
+                    </div>
+                    @if (editError(); as message) {
+                      <div class="col-12"><div class="alert alert-danger py-1 px-2 mb-0 small">{{ message }}</div></div>
+                    }
+                  </form>
+                </td>
+              </tr>
+            } @else {
+              <tr [class.opacity-50]="busyId() === m.id">
+                <td class="fw-semibold">{{ m.name }}</td>
+                <td class="text-end text-nowrap">
+                  @if (m.cost === 0) { <span class="badge text-bg-success">Gratuit</span> } @else { {{ m.cost | lei }} }
+                </td>
+                <td class="text-end">{{ productCount().get(m.id) ?? 0 }}</td>
+                <td class="text-end text-nowrap">
+                  <button type="button" class="btn btn-sm btn-outline-primary" (click)="startEdit(m)">Editeaza</button>
+                  <button type="button" class="btn btn-sm btn-outline-danger ms-1" (click)="remove(m)"
+                          [disabled]="busyId() === m.id">Sterge</button>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}

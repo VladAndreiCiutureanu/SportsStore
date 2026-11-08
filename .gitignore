@@ -49,3 +49,6 @@ pnpm-debug.log*
 .DS_Store
 Thumbs.db
 Desktop.ini
+# Imagini de produs incarcate din panoul de administrare (date, nu cod)
+**/wwwroot/images/products/*
+!**/wwwroot/images/products/.gitkeep

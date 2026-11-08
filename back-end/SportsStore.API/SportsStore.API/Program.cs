@@ -3,7 +3,14 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SportsStore.API.Database;
+using System.Globalization;
 using System.Text;
+
+// Folosim aceleasi reguli pentru numere pe orice calculator. Altfel, pe un Windows in romana
+// (separator zecimal ","), atributele [Range(typeof(decimal), "0.00", ...)] din DTO-uri nu pot
+// citi limitele scrise cu "." si validarea arunca exceptie (500) la produse, livrare si cupoane.
+CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -87,6 +94,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Serveste fisierele din wwwroot (imaginile de produs incarcate prin /api/uploads/product-image).
+app.UseStaticFiles();
 
 app.UseAuthentication();
 
